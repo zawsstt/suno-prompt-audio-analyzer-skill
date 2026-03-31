@@ -382,23 +382,119 @@ def analyze(filepath):
 
     # ── 15. Production style assessment ──────────────────────────────────────
     sub_pct  = band_e["sub_bass_20_60hz"]["energy_pct"]
+    bass_pct = band_e["bass_60_250hz"]["energy_pct"]
+    mid_pct  = band_e["mid_500_2khz"]["energy_pct"]
+    hi_mid_pct = band_e["high_mid_2k_6khz"]["energy_pct"]
     air_pct  = band_e["air_10k_plus"]["energy_pct"]
     crest    = result["loudness"]["crest_factor_db"]
+    dr_db    = result["loudness"]["dynamic_range_db"]
+    hihat_pb = result["drum_pattern"]["hihat_per_bar"]
+    kick_pb  = result["drum_pattern"]["kick_per_bar"]
 
-    genres=[]
-    if 118<=bpm<=135 and sub_pct>2:    genres.append("House / Deep House")
-    if 126<=bpm<=145 and avg_c>3000:   genres.append("Trance / Progressive")
-    if bpm>=140 and pe/te>0.3:          genres.append("Drum & Bass / Breakbeat")
-    if bpm<=90 and he/te>0.7:           genres.append("Ballad / Ambient / Neo-soul")
-    if 85<=bpm<=115 and avg_c<2500:     genres.append("R&B / Soul / Lo-fi")
-    if 100<=bpm<=130 and avg_c>2000:    genres.append("Pop / Indie Pop")
-    if bpm>=130 and avg_c>4000:         genres.append("Hard Dance / Techno")
-    if sub_pct>8:                        genres.append("Trap / Hip-hop (heavy sub)")
-    if he/te>0.85 and bpm<100:          genres.append("Cinematic / Orchestral")
-    if not genres: genres=["Electronic / Instrumental (mixed)"]
+    # ── Multi-signal genre scoring system ────────────────────────────────────
+    # Each genre accumulates a confidence score from multiple signals.
+    # Prevents single-metric false positives.
+    genre_scores = {}
+
+    def add(g, score, reason=""):
+        genre_scores[g] = genre_scores.get(g, 0) + score
+
+    # House / Deep House
+    if 118 <= bpm <= 135:           add("House / Deep House", 2, "bpm")
+    if kick_pb >= 3.5:              add("House / Deep House", 2, "four-on-floor kick")
+    if sub_pct > 3 and sub_pct<15:  add("House / Deep House", 1, "moderate sub")
+    if he/te > 0.5:                  add("House / Deep House", 1, "harmonic")
+    if avg_c < 4000:                 add("House / Deep House", 1, "warm centroid")
+
+    # Tech House
+    if 126 <= bpm <= 138:           add("Tech House", 2, "bpm")
+    if kick_pb >= 3.5:              add("Tech House", 2, "tight kick")
+    if avg_c > 3000:                 add("Tech House", 1, "bright")
+    if hihat_pb >= 3:               add("Tech House", 1, "busy hihat")
+    if pe/te > 0.35:                 add("Tech House", 1, "percussive")
+
+    # Trance / Progressive
+    if 126 <= bpm <= 145:           add("Trance / Progressive", 2, "bpm")
+    if avg_c > 3500:                 add("Trance / Progressive", 1, "bright")
+    if he/te > 0.6:                  add("Trance / Progressive", 2, "harmonic build")
+    if air_pct > 5:                  add("Trance / Progressive", 1, "airy highs")
+    if kick_pb >= 3.5:              add("Trance / Progressive", 1, "four-on-floor")
+
+    # Drum & Bass / Breakbeat
+    if bpm >= 160:                   add("Drum & Bass / Breakbeat", 3, "high bpm")
+    elif 140 <= bpm < 160:          add("Drum & Bass / Breakbeat", 2, "bpm")
+    if pe/te > 0.35:                 add("Drum & Bass / Breakbeat", 2, "percussive")
+    if sub_pct > 5:                  add("Drum & Bass / Breakbeat", 1, "sub bass")
+    if avg_c > 2500:                 add("Drum & Bass / Breakbeat", 1, "bright")
+
+    # Techno / Hard Techno
+    if bpm >= 130:                   add("Techno / Hard Dance", 1, "high bpm")
+    if bpm >= 140:                   add("Techno / Hard Dance", 2, "techno bpm")
+    if avg_c > 4000:                 add("Techno / Hard Dance", 2, "harsh bright")
+    if pe/te > 0.4:                  add("Techno / Hard Dance", 1, "industrial percussive")
+    if kick_pb >= 3.5:              add("Techno / Hard Dance", 1, "kick-driven")
+
+    # Trap / Hip-hop
+    if 60 <= bpm <= 100:            add("Trap / Hip-hop", 2, "bpm")
+    elif 100 < bpm <= 140:          add("Trap / Hip-hop", 1, "bpm half-time")
+    if sub_pct > 10:                 add("Trap / Hip-hop", 3, "heavy sub")
+    if hihat_pb >= 4:               add("Trap / Hip-hop", 2, "trap hihats")
+    if bass_pct > 30:               add("Trap / Hip-hop", 1, "bass dominant")
+    if kick_pb < 2:                  add("Trap / Hip-hop", 1, "sparse kick (trap)")
+
+    # Lo-fi Hip-hop / Boom-bap
+    if 70 <= bpm <= 100:            add("Lo-fi / Boom-bap", 2, "bpm")
+    if he/te > 0.65:                 add("Lo-fi / Boom-bap", 2, "harmonic")
+    if avg_c < 2500:                 add("Lo-fi / Boom-bap", 2, "warm/muffled")
+    if crest > 10:                   add("Lo-fi / Boom-bap", 1, "dynamic")
+    if hihat_pb < 3:                 add("Lo-fi / Boom-bap", 1, "sparse hihat")
+
+    # R&B / Neo-soul
+    if 60 <= bpm <= 110:            add("R&B / Neo-soul", 1, "bpm")
+    if he/te > 0.7:                  add("R&B / Neo-soul", 2, "harmonic")
+    if avg_c < 3000:                 add("R&B / Neo-soul", 1, "warm")
+    if sub_pct > 5:                  add("R&B / Neo-soul", 1, "bass presence")
+    if mid_pct > 20:                 add("R&B / Neo-soul", 1, "midrange presence")
+
+    # Pop / Indie Pop
+    if 100 <= bpm <= 130:           add("Pop / Indie Pop", 1, "bpm")
+    if avg_c > 2000 and avg_c < 4000: add("Pop / Indie Pop", 2, "balanced bright")
+    if he/te > 0.6:                  add("Pop / Indie Pop", 1, "melodic")
+    if crest < 14:                   add("Pop / Indie Pop", 1, "compressed radio mix")
+    if air_pct > 3:                  add("Pop / Indie Pop", 1, "polished highs")
+
+    # Ambient / Cinematic
+    if bpm <= 90:                    add("Ambient / Cinematic", 1, "slow bpm")
+    if he/te > 0.85:                  add("Ambient / Cinematic", 3, "very harmonic")
+    if avg_c < 2000:                  add("Ambient / Cinematic", 2, "dark/soft centroid")
+    if sub_pct < 3 and bass_pct < 20: add("Ambient / Cinematic", 1, "low bass presence")
+    if crest > 12:                    add("Ambient / Cinematic", 1, "wide dynamics")
+
+    # EDM / Big Room
+    if 126 <= bpm <= 140:           add("EDM / Big Room", 1, "bpm")
+    if air_pct > 8:                  add("EDM / Big Room", 2, "bright/shiny highs")
+    if avg_c > 4000:                 add("EDM / Big Room", 1, "bright")
+    if kick_pb >= 3.5:              add("EDM / Big Room", 1, "four-on-floor")
+    if he/te > 0.5 and sub_pct > 5: add("EDM / Big Room", 2, "full spectrum")
+
+    # ── Pick top genres (score > threshold) ──────────────────────────────────
+    sorted_genres = sorted(genre_scores.items(), key=lambda x: x[1], reverse=True)
+    THRESHOLD = 4  # minimum score to be considered a real match
+    genres = [g for g, s in sorted_genres if s >= THRESHOLD]
+    if not genres:
+        # Fallback: pick top-2 by score even if below threshold
+        genres = [g for g, s in sorted_genres[:2]]
+    if not genres:
+        genres = ["Electronic / Instrumental (mixed)"]
+    # Limit to top 3
+    genres = genres[:3]
+
+    # ── Store detailed genre scores for LLM context ────────────────────────
+    genre_scores_detail = {g: s for g, s in sorted_genres[:6]}
 
     result["production_style"] = {
         "likely_genres": genres,
+        "genre_scores": genre_scores_detail,
         "mastering": "heavily limited" if crest<8 else ("radio-ready" if crest<14 else "wide dynamic range"),
         "daw_tips": [
             f"Set project BPM to {round(bpm,1)}, time signature {time_sig}",
@@ -560,148 +656,181 @@ def extract_lyrics(path):
 def generate_suno_prompt(r):
     """
     Synthesize analysis data into a Suno-compatible style prompt ≤200 characters.
-    Returns dict with 'prompt', 'char_count', and 'reasoning'.
+    Returns dict with 'prompt', 'char_count', 'reasoning', and 'llm_synthesis_hint'.
+
+    v4 changes:
+    - Multi-signal genre scoring (no single-metric false positives)
+    - Genre → Suno tag mapping now covers 12+ genres with specific sub-genre tags
+    - Modal mood now cross-validated with genre context
+    - Bass tag selection genre-aware (e.g. DnB sub ≠ hip-hop 808)
+    - Drum tag upgraded: distinguishes trap/breakbeat/four-on-floor patterns
+    - LLM synthesis hint: structured context for Claude's final style judgment
     """
 
-    # ── 1. Genre slots ────────────────────────────────────────────────────────
-    # Priority order: specific electronic genres beat generic "pop"
-    genre_priority = [
-        ("House / Deep House",           ["deep house"]),
-        ("Tech House",                   ["tech house"]),
-        ("Trance / Progressive",         ["trance"]),
-        ("Drum & Bass / Breakbeat",      ["drum and bass"]),
-        ("Hard Dance / Techno",          ["techno"]),
-        ("Trap / Hip-hop (heavy sub)",   ["trap"]),
-        ("Ballad / Ambient / Neo-soul",  ["neo-soul"]),
-        ("R&B / Soul / Lo-fi",           ["lo-fi"]),
-        ("Cinematic / Orchestral",       ["cinematic"]),
-        ("Electronic / Instrumental (mixed)", ["electronic"]),
-        ("Pop / Indie Pop",              ["indie pop"]),  # lowest priority
-    ]
+    # ── 1. Genre → Suno tag mapping (v4: genre-specific) ─────────────────────
+    # Maps detected genre labels to their best Suno style descriptors.
+    # Ordered from most specific to most generic to fill slots intelligently.
+    GENRE_TAG_MAP = {
+        "Drum & Bass / Breakbeat":       ["drum and bass", "breakbeat"],
+        "Techno / Hard Dance":           ["techno", "hard techno"],
+        "Tech House":                    ["tech house"],
+        "House / Deep House":            ["deep house"],
+        "Trance / Progressive":          ["progressive trance", "trance"],
+        "EDM / Big Room":                ["big room EDM", "EDM"],
+        "Trap / Hip-hop":                ["trap", "hip-hop"],
+        "Lo-fi / Boom-bap":              ["lo-fi hip-hop", "boom bap"],
+        "R&B / Neo-soul":                ["R&B", "neo-soul"],
+        "Ambient / Cinematic":           ["cinematic", "ambient"],
+        "Pop / Indie Pop":               ["indie pop", "pop"],
+        "Electronic / Instrumental (mixed)": ["electronic"],
+    }
+
     likely = r.get("production_style", {}).get("likely_genres", [])
+    genre_scores = r.get("production_style", {}).get("genre_scores", {})
     genre_tags = []
-    for key, tags in genre_priority:
-        for g in likely:
-            if key in g:
+    for g in likely:
+        for key, tags in GENRE_TAG_MAP.items():
+            if key in g or g in key:
                 for t in tags:
                     if t not in genre_tags:
                         genre_tags.append(t)
     if not genre_tags:
         genre_tags = ["electronic"]
-    # Max 2 genres — prefer the two most specific
+    # Max 2 genre tags
     genre_tags = genre_tags[:2]
 
-    # ── 2. Modal mood ─────────────────────────────────────────────────────────
+    # ── 2. Modal mood — cross-validated with genre ────────────────────────────
     modal = r.get("tonality", {}).get("modal_flavor", "")
     mode  = r.get("tonality", {}).get("mode", "minor")
-    modal_mood_map = {
-        "Phrygian":             ["dark", "brooding"],
-        "Dorian":               ["melancholic", "moody"],
-        "Aeolian (natural minor)": ["melancholic", "dark"],
-        "Mixolydian":           ["uplifting", "groovy"],
-        "Ionian (natural major)":  ["bright", "uplifting"],
-    }
-    mood_tags = modal_mood_map.get(modal, ["dark"] if mode == "minor" else ["uplifting"])
-    mood_tags = mood_tags[:1]  # 1 mood word
+    bpm   = r.get("summary", {}).get("tempo_bpm", 120)
 
-    # ── 3. Bass character ─────────────────────────────────────────────────────
+    # Base mood from mode/modal
+    modal_mood_map = {
+        "Phrygian":                {"default": "dark", "edm": "dark and ominous", "latin": "flamenco"},
+        "Dorian":                  {"default": "melancholic", "edm": "hypnotic"},
+        "Aeolian (natural minor)": {"default": "melancholic", "edm": "moody"},
+        "Mixolydian":              {"default": "groovy", "edm": "euphoric"},
+        "Ionian (natural major)":  {"default": "uplifting", "edm": "euphoric"},
+    }
+
+    # Context: is this EDM-type?
+    edm_genres = {"tech house", "deep house", "trance", "EDM", "techno", "drum and bass"}
+    is_edm = any(t.lower() in edm_genres for t in genre_tags)
+
+    if modal in modal_mood_map:
+        moods = modal_mood_map[modal]
+        mood_word = moods["edm"] if is_edm else moods["default"]
+    else:
+        mood_word = "dark" if mode == "minor" else "uplifting"
+
+    # Override: very high BPM always suggests high energy regardless of mode
+    if bpm >= 160 and mood_word in ["melancholic", "dark"]:
+        mood_word = "intense"
+
+    mood_tags = [mood_word]
+
+    # ── 3. Bass character — genre-aware ───────────────────────────────────────
     sub_pct  = r.get("frequency_bands",{}).get("sub_bass_20_60hz",{}).get("energy_pct", 0)
     bass_pct = r.get("frequency_bands",{}).get("bass_60_250hz",{}).get("energy_pct", 0)
-    bass_tags = []
-    if sub_pct > 15:   bass_tags = ["heavy sub bass"]
-    elif sub_pct > 8:  bass_tags = ["808 bass"]
-    elif bass_pct > 40: bass_tags = ["deep bass"]
-    elif bass_pct > 20: bass_tags = ["punchy bass"]
 
-    # ── 4. Drum feel ──────────────────────────────────────────────────────────
+    bass_tags = []
+    is_hiphop = any("trap" in t.lower() or "hip" in t.lower() or "boom" in t.lower()
+                    for t in genre_tags)
+    is_dnb    = any("drum and bass" in t.lower() or "breakbeat" in t.lower()
+                    for t in genre_tags)
+
+    if is_hiphop:
+        # Hip-hop context: sub pct is meaningful for 808 detection
+        if sub_pct > 15:   bass_tags = ["heavy 808 bass"]
+        elif sub_pct > 8:  bass_tags = ["808 bass"]
+        elif bass_pct > 30: bass_tags = ["punchy bass"]
+    elif is_dnb:
+        # DnB: sub is expected, only tag if exceptional
+        if sub_pct > 20:   bass_tags = ["heavy sub bass", "Reese bass"]
+        elif sub_pct > 10: bass_tags = ["rolling bass"]
+    else:
+        # General electronic / other
+        if sub_pct > 15:   bass_tags = ["heavy sub bass"]
+        elif sub_pct > 8:  bass_tags = ["deep sub bass"]
+        elif bass_pct > 40: bass_tags = ["warm deep bass"]
+        elif bass_pct > 20: bass_tags = ["punchy bass"]
+
+    # ── 4. Drum feel — pattern-aware ─────────────────────────────────────────
     dp = r.get("drum_pattern", {})
     kick_pb  = dp.get("kick_per_bar", 0)
     hihat_pb = dp.get("hihat_per_bar", 0)
+    snare_pb = dp.get("snare_per_bar", 0)
+
     drum_tags = []
-    if kick_pb >= 3.5:      drum_tags = ["four-on-the-floor"]
-    elif kick_pb >= 2:      drum_tags = ["punchy drums"]
-    if hihat_pb >= 4:       drum_tags += ["trap hi-hats"]
-    elif hihat_pb >= 2 and not drum_tags: drum_tags = ["electronic drums"]
+    if is_hiphop:
+        if hihat_pb >= 5:      drum_tags = ["rolling trap hi-hats"]
+        elif hihat_pb >= 3:    drum_tags = ["trap hi-hats"]
+        if snare_pb >= 3:      drum_tags += ["snappy snare"]
+    elif is_dnb:
+        drum_tags = ["breakbeat drums", "jungle snare rolls"]
+    else:
+        if kick_pb >= 3.5:     drum_tags = ["four-on-the-floor kick"]
+        elif kick_pb >= 2:     drum_tags = ["punchy kick"]
+        if hihat_pb >= 6:      drum_tags += ["16th hi-hats"]
+        elif hihat_pb >= 3:    drum_tags += ["offbeat hi-hats"]
+        elif hihat_pb >= 1 and not drum_tags: drum_tags = ["electronic drums"]
     drum_tags = drum_tags[:2]
 
     # ── 5. Tempo descriptor ───────────────────────────────────────────────────
-    bpm = r.get("summary", {}).get("tempo_bpm", 120)
     if bpm < 75:       tempo_tag = "downtempo"
-    elif bpm < 100:    tempo_tag = "mid-tempo"
-    elif bpm < 120:    tempo_tag = "uptempo"
-    elif bpm < 140:    tempo_tag = "driving"
-    else:              tempo_tag = "high-energy"
+    elif bpm < 95:     tempo_tag = "mid-tempo"
+    elif bpm < 115:    tempo_tag = "uptempo"
+    elif bpm < 130:    tempo_tag = "driving"
+    elif bpm < 155:    tempo_tag = "high-energy"
+    else:              tempo_tag = "frenetic energy"
 
     # ── 6. Structural tag ─────────────────────────────────────────────────────
     ec = r.get("energy_curve", [])
     rms_vals = [e["rms_db"] for e in ec]
     has_drop = False
     if len(rms_vals) > 6:
-        # Look for: a quiet valley anywhere in the track followed by a loud peak
         global_min_idx = rms_vals.index(min(rms_vals))
         global_max_idx = rms_vals.index(max(rms_vals))
         valley = rms_vals[global_min_idx]
         peak   = rms_vals[global_max_idx]
         avg    = sum(rms_vals) / len(rms_vals)
-        # Drop = valley is ≥6dB below average AND a loud section follows it
         if valley < avg - 6 and global_max_idx > global_min_idx and peak > valley + 8:
             has_drop = True
     struct_tags = ["build and drop"] if has_drop else []
 
-    # ── 7. Texture / mix ─────────────────────────────────────────────────────
-    crest  = r.get("loudness", {}).get("crest_factor_db", 12)
-    hp     = r.get("harmonic_percussive", {})
+    # ── 7. Texture / atmosphere ───────────────────────────────────────────────
+    crest   = r.get("loudness", {}).get("crest_factor_db", 12)
+    hp      = r.get("harmonic_percussive", {})
     h_ratio = hp.get("harmonic_ratio", 0.5)
     brightness = r.get("spectral", {}).get("brightness", "mid")
 
     texture_tags = []
-    if h_ratio > 0.8:        texture_tags.append("atmospheric")
-    elif h_ratio < 0.4:      texture_tags.append("percussive")
-    if brightness == "dark":  texture_tags.append("dark mix")
-    if crest > 14:            texture_tags.append("wide dynamics")
-    elif crest < 8:           texture_tags.append("compressed")
+    if h_ratio > 0.8 and is_edm:    texture_tags.append("lush atmosphere")
+    elif h_ratio > 0.8:              texture_tags.append("atmospheric")
+    elif h_ratio < 0.3:              texture_tags.append("raw percussive")
+    if brightness == "dark" and "dark" not in mood_word:
+        texture_tags.append("dark production")
+    if crest > 16:                    texture_tags.append("wide dynamics")
+    elif crest < 7:                   texture_tags.append("heavily compressed")
     texture_tags = texture_tags[:1]
 
-    # ── 8. Assemble with budget tracking ─────────────────────────────────────
-    LIMIT = 200
-    # Priority order: genre, mood, bass, drums, tempo, structure, texture
-    all_slots = [
-        genre_tags,
-        mood_tags,
-        bass_tags,
-        drum_tags,
-        [tempo_tag],
-        struct_tags,
-        texture_tags,
-    ]
-
-    selected = []
-    for slot in all_slots:
-        for tag in slot:
-            candidate = ", ".join(selected + [tag])
-            if len(candidate) <= LIMIT:
-                selected.append(tag)
-
-    prompt = ", ".join(selected)
-    # Final safety truncation (should not be needed)
-    while len(prompt) > LIMIT:
-        selected.pop()
-        prompt = ", ".join(selected)
-
-    # ── 9. Lyrics-derived tags + dual-prompt mode ────────────────────────────
-    lyrics = r.get("lyrics", {})
+    # ── 8. Lyrics context ─────────────────────────────────────────────────────
+    lyrics    = r.get("lyrics", {})
     has_lyrics = lyrics.get("has_lyrics", False)
     lyric_tags = []
     if has_lyrics:
-        # Lyrics mode: do NOT add language tag to style prompt (it's in the Lyrics field)
-        # Only add lyric mood if not already covered
         lyric_mood = lyrics.get("lyric_mood")
-        if lyric_mood and lyric_mood not in mood_tags and lyric_mood not in genre_tags:
+        # Only add lyric mood if it differs from and adds nuance beyond existing tags
+        if lyric_mood and lyric_mood not in mood_tags and lyric_mood not in " ".join(genre_tags):
             lyric_tags.append(lyric_mood)
     else:
         lyric_tags.append("instrumental")
 
-    # Insert lyric tags into all_slots
+    # ── 9. Assemble with budget tracking ─────────────────────────────────────
+    LIMIT = 200
+    STYLE_LIMIT = 120 if has_lyrics else LIMIT
+
+    # Priority: genre > mood > bass > drums > tempo > structure > lyric_ctx > texture
     all_slots = [
         genre_tags,
         mood_tags,
@@ -712,9 +841,6 @@ def generate_suno_prompt(r):
         lyric_tags,
         texture_tags,
     ]
-
-    # ── Dual-prompt mode: lyrics → 120 char style limit; instrumental → 200 ──
-    STYLE_LIMIT = 120 if has_lyrics else LIMIT  # LIMIT=200 defined earlier
 
     selected = []
     for slot in all_slots:
@@ -728,13 +854,51 @@ def generate_suno_prompt(r):
         selected.pop()
         prompt = ", ".join(selected)
 
+    # ── 10. LLM synthesis hint (for Claude to refine the prompt) ─────────────
+    # Provides structured context so Claude can make a final "human ear" judgment
+    # on style tags, especially when rule-based results feel wrong.
+    spectral = r.get("spectral", {})
+    llm_hint = {
+        "note": "Claude should use this data to validate or refine the rule-based prompt above.",
+        "key_signals": {
+            "bpm": bpm,
+            "key_mode": r.get("summary", {}).get("key_full", ""),
+            "genre_scores_top5": dict(list(genre_scores.items())[:5]),
+            "sub_bass_pct": round(sub_pct, 1),
+            "bass_pct": round(bass_pct, 1),
+            "spectral_centroid_hz": spectral.get("centroid_hz", 0),
+            "brightness": brightness,
+            "harmonic_ratio": round(h_ratio, 3),
+            "kick_per_bar": kick_pb,
+            "hihat_per_bar": hihat_pb,
+            "crest_factor_db": crest,
+            "has_build_drop": has_drop,
+            "lyrics_language": lyrics.get("language"),
+            "lyric_mood": lyrics.get("lyric_mood"),
+            "top_keywords": lyrics.get("top_keywords", [])[:5],
+        },
+        "rule_based_prompt": prompt,
+        "refinement_guidance": (
+            "If the rule-based prompt tags feel generic or mismatched to the actual sound, "
+            "replace them with more accurate Suno style tags. "
+            "Prioritize: (1) precise genre sub-label over generic ones, "
+            "(2) mood adjectives that match both the harmonic color AND the production energy, "
+            "(3) instrument/production descriptors (e.g. 'Rhodes piano', 'modular synth', "
+            "'acoustic guitar', 'distorted 808') when they're clearly audible in the mix."
+        ),
+    }
+
     reasoning = {
         "genres_from_analysis": likely,
+        "genre_scores": genre_scores,
         "modal_flavor": modal,
         "sub_bass_pct": round(sub_pct, 1),
         "kick_per_bar": kick_pb,
         "hihat_per_bar": hihat_pb,
         "bpm": bpm,
+        "is_edm_context": is_edm,
+        "is_hiphop_context": is_hiphop,
+        "is_dnb_context": is_dnb,
         "has_build_drop": has_drop,
         "crest_db": crest,
         "h_ratio": round(h_ratio, 3),
@@ -742,17 +906,18 @@ def generate_suno_prompt(r):
         "lyric_mood_detected": lyrics.get("lyric_mood"),
     }
 
-    mode = "lyrics" if has_lyrics else "instrumental"
+    mode_str = "lyrics" if has_lyrics else "instrumental"
     return {
-        "mode": mode,
+        "mode": mode_str,
         "style_char_limit": STYLE_LIMIT,
         "prompt": prompt,
         "char_count": len(prompt),
         "within_limit": len(prompt) <= STYLE_LIMIT,
         "note": ("Lyrics mode: paste this into Suno 'Style of Music' (≤120 chars). "
                  "Paste original lyrics into 'Lyrics' field (≤3000 chars)."
-                 if mode == "lyrics" else
+                 if mode_str == "lyrics" else
                  "Instrumental mode: paste this into Suno 'Style of Music' (≤200 chars)."),
+        "llm_synthesis_hint": llm_hint,
         "reasoning": reasoning,
     }
 
