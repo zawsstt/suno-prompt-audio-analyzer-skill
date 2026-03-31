@@ -1,0 +1,625 @@
+# Suno Song Structure Templates v1.0
+# Generated for audio-analyzer skill v6
+# Last updated: 2026-03-31
+#
+# Usage: Match audio analysis features against trigger_conditions to select
+#        the best template, then use suno_format as the lyric skeleton.
+
+templates:
+
+  # ─────────────────────────────────────────────
+  # Template 1: Pop Standard
+  # ─────────────────────────────────────────────
+  pop_standard:
+    name: "Pop Standard"
+    description: >
+      经典流行曲式，适合朗朗上口的商业流行、摇滚、R&B 作品。
+      结构清晰，verse 铺垫情绪，pre-chorus 堆积张力，chorus 爆发。
+    applicable_scenes:
+      - 商业流行 / Top 40
+      - 轻摇滚
+      - R&B / Soul
+    trigger_conditions:
+      bpm_range: [90, 130]
+      danceability_min: 1.0    # librosa/essentia danceability scale 0-3
+      danceability_max: 2.5
+      key_type: "any"          # major 更常见，但 minor 也适用
+      has_vocals: true
+      genre_hints: ["pop", "rock", "r&b", "soul", "indie pop", "electropop"]
+      energy_profile: "mountain"    # 能量: 中→高→中，副歌爆发
+      segment_count_min: 6
+    structure:
+      - intro
+      - verse
+      - pre-chorus
+      - chorus
+      - verse
+      - pre-chorus
+      - chorus
+      - bridge
+      - chorus
+      - outro
+    suno_format: |
+      [intro]
+
+      [verse]
+
+      [pre-chorus]
+
+      [chorus]
+
+      [verse]
+
+      [pre-chorus]
+
+      [chorus]
+
+      [bridge]
+
+      [chorus]
+
+      [outro]
+    notes: >
+      bridge 可替换为 [solo] 或 [interlude]。
+      如原曲无 pre-chorus 可直接删去该标签。
+
+  # ─────────────────────────────────────────────
+  # Template 2: Electronic / EDM Build-Drop
+  # ─────────────────────────────────────────────
+  edm_build_drop:
+    name: "Electronic / EDM Build-Drop"
+    description: >
+      电子舞曲标准 build→drop 结构，强调蓄力释放的能量弧度。
+      适合 House、Techno、Progressive、Future Bass、Dubstep 等。
+    applicable_scenes:
+      - EDM / House / Techno
+      - Future Bass / Dubstep
+      -电子流行 (Electronic Pop)
+    trigger_conditions:
+      bpm_range: [120, 175]
+      danceability_min: 1.8
+      danceability_max: 3.0
+      key_type: "any"
+      has_vocals: false         # 常为 instrumental 或少量人声
+      genre_hints: ["edm", "electronic", "house", "techno", "dubstep",
+                    "future bass", "trance", "dance", "progressive"]
+      energy_profile: "ascending_peak"   # 能量持续上升→峰值→回落→再上升
+      segment_count_min: 4
+    structure:
+      - intro
+      - build
+      - drop
+      - break
+      - build
+      - drop
+      - outro
+    suno_format: |
+      [intro]
+
+      [build]
+
+      [drop]
+
+      [break]
+
+      [build]
+
+      [drop]
+
+      [outro]
+    notes: >
+      [break] 可加入 [spoken word] 或 [ad lib] 增加层次感。
+      第二个 drop 通常比第一个更重、更厚。
+
+  # ─────────────────────────────────────────────
+  # Template 3: Cinematic / Orchestral
+  # ─────────────────────────────────────────────
+  cinematic_orchestral:
+    name: "Cinematic / Orchestral"
+    description: >
+      电影配乐或管弦乐风格，以主题发展和动态对比为核心。
+      无需副歌，以情绪弧度驱动叙事。
+    applicable_scenes:
+      - 电影配乐 / OST
+      - 管弦乐 / 交响乐
+      - 新古典 / Neoclassical
+      - 游戏音乐
+    trigger_conditions:
+      bpm_range: [50, 120]
+      danceability_min: 0.0
+      danceability_max: 0.9
+      key_type: "any"
+      has_vocals: false
+      genre_hints: ["cinematic", "orchestral", "classical", "neoclassical",
+                    "soundtrack", "ambient orchestral", "epic", "score"]
+      energy_profile: "dramatic_arc"    # 低→中→高峰→解决
+      dynamic_range_min: 15.0           # dB，宽动态范围
+      segment_count_min: 4
+    structure:
+      - intro
+      - theme_a
+      - development
+      - climax
+      - resolution
+      - outro
+    suno_format: |
+      [intro]
+
+      [theme A]
+
+      [development]
+
+      [climax]
+
+      [resolution]
+
+      [outro]
+    notes: >
+      [theme A] 可扩展为 [theme A] + [theme B] 对比。
+      [climax] 前可插入 [build] 加强张力。
+      [resolution] 相当于情绪上的 [outro] 前缓冲。
+
+  # ─────────────────────────────────────────────
+  # Template 4: Hip-hop / Rap
+  # ─────────────────────────────────────────────
+  hiphop_rap:
+    name: "Hip-hop / Rap"
+    description: >
+      经典说唱结构，以 verse 叙事、hook 凝聚为核心。
+      适合 hip-hop、trap、lo-fi hip-hop、boom bap 等。
+    applicable_scenes:
+      - Hip-hop / Rap
+      - Trap / Drill
+      - Lo-fi Hip-hop
+      - R&B 说唱融合
+    trigger_conditions:
+      bpm_range: [70, 115]
+      danceability_min: 0.8
+      danceability_max: 2.0
+      key_type: "minor"         # 多为小调或 modal
+      has_vocals: true
+      genre_hints: ["hip-hop", "rap", "trap", "drill", "lo-fi", "boom bap",
+                    "conscious rap", "mumble rap", "r&b rap"]
+      energy_profile: "steady_pulse"    # 能量平稳，靠节奏驱动
+      valence_max: 0.5                  # 低 valence（偏 dark/serious）
+      segment_count_min: 5
+    structure:
+      - intro
+      - verse
+      - hook
+      - verse
+      - hook
+      - bridge
+      - hook
+      - outro
+    suno_format: |
+      [intro]
+
+      [verse]
+
+      [hook]
+
+      [verse]
+
+      [hook]
+
+      [bridge]
+
+      [hook]
+
+      [outro]
+    notes: >
+      [hook] 在 hip-hop 中相当于 [chorus]，但更短更重复。
+      可在 verse 后加 [ad lib] 标签增加即兴感。
+      [bridge] 可替换为 [spoken word] 或第三段 verse。
+
+  # ─────────────────────────────────────────────
+  # Template 5: Ballad / Slow
+  # ─────────────────────────────────────────────
+  ballad_slow:
+    name: "Ballad / Slow"
+    description: >
+      慢歌抒情曲式，情感深沉，以 verse 铺陈故事、chorus 情感爆发为核心。
+      适合流行抒情、钢琴 ballad、folk 等。
+    applicable_scenes:
+      - 流行抒情 / Pop Ballad
+      - 钢琴曲 / Piano Ballad
+      - Folk / Acoustic
+      - 情歌 / Love Song
+    trigger_conditions:
+      bpm_range: [40, 80]
+      danceability_min: 0.0
+      danceability_max: 1.0
+      key_type: "any"
+      has_vocals: true
+      genre_hints: ["ballad", "acoustic", "piano", "folk", "slow",
+                    "singer-songwriter", "country", "blues slow"]
+      energy_profile: "gradual_swell"   # 能量缓慢上升，chorus 稍高
+      tempo_feel: "slow"
+      segment_count_min: 5
+    structure:
+      - intro
+      - verse
+      - chorus
+      - verse
+      - chorus
+      - bridge
+      - chorus
+      - outro
+    suno_format: |
+      [intro]
+
+      [verse]
+
+      [chorus]
+
+      [verse]
+
+      [chorus]
+
+      [bridge]
+
+      [chorus]
+
+      [outro]
+    notes: >
+      bridge 常为情感最高点或转折，可加 [ad lib] 结尾。
+      outro 可重复 chorus 旋律做 fade-out 处理。
+
+  # ─────────────────────────────────────────────
+  # Template 6: Minimal / Ambient Loop
+  # ─────────────────────────────────────────────
+  minimal_ambient:
+    name: "Minimal / Ambient Loop"
+    description: >
+      极简或氛围音乐结构，段落模糊，以音色层次变化为驱动。
+      适合 ambient、drone、chillout、meditation 等。
+    applicable_scenes:
+      - Ambient / Drone
+      - Chillout / Downtempo
+      - Meditation / Sleep Music
+      - Lo-fi Chill
+    trigger_conditions:
+      bpm_range: [40, 100]
+      danceability_min: 0.0
+      danceability_max: 0.7
+      key_type: "any"
+      has_vocals: false
+      genre_hints: ["ambient", "drone", "chillout", "downtempo", "meditation",
+                    "lo-fi chill", "atmospheric", "new age"]
+      energy_profile: "plateau"         # 能量平稳，无明显峰值
+      dynamic_range_max: 8.0            # 窄动态，轻柔
+      segment_count_max: 4
+    structure:
+      - intro
+      - layer_a
+      - layer_b
+      - interlude
+      - layer_a
+      - outro
+    suno_format: |
+      [intro]
+
+      [interlude]
+
+      [break]
+
+      [interlude]
+
+      [outro]
+    notes: >
+      ambient 曲通常无歌词，Suno 中可只写结构标签 + 风格描述。
+      [break] 可用于加入自然音效或纯器乐段落。
+
+  # ─────────────────────────────────────────────
+  # Template 7: Rock / Alt-Rock
+  # ─────────────────────────────────────────────
+  rock_alt:
+    name: "Rock / Alt-Rock"
+    description: >
+      摇滚曲式，强调吉他驱动和情绪爆发，经典 verse-chorus 结构加 guitar solo。
+      适合 rock、alt-rock、punk、grunge、metal 等。
+    applicable_scenes:
+      - Rock / Hard Rock
+      - Alt-Rock / Indie Rock
+      - Punk / Post-Punk
+      - Grunge / Metal
+    trigger_conditions:
+      bpm_range: [100, 180]
+      danceability_min: 0.5
+      danceability_max: 2.0
+      key_type: "minor"
+      has_vocals: true
+      genre_hints: ["rock", "alt-rock", "punk", "grunge", "metal",
+                    "hard rock", "indie rock", "post-punk", "emo"]
+      energy_profile: "high_energy"     # 高能量，持续张力
+      energy_min: 0.7
+      segment_count_min: 6
+    structure:
+      - intro
+      - verse
+      - chorus
+      - verse
+      - chorus
+      - solo
+      - chorus
+      - outro
+    suno_format: |
+      [intro]
+
+      [verse]
+
+      [chorus]
+
+      [verse]
+
+      [chorus]
+
+      [solo]
+
+      [chorus]
+
+      [outro]
+    notes: >
+      [solo] 为吉他独奏段，可替换为 [interlude]。
+      punk 风格可去掉 solo，加快整体结构节奏。
+
+
+# ═══════════════════════════════════════════════════════════
+# Suno Tag Reference
+# ═══════════════════════════════════════════════════════════
+suno_tags:
+  structure_tags:
+    - tag: "[intro]"
+      zh: "前奏"
+      use: "Opening section, establishes the sonic theme before vocals enter"
+      tips: "Keep it short (4-8 bars). Often mirrors the chorus melody instrumentally."
+
+    - tag: "[verse]"
+      zh: "主歌"
+      use: "Main narrative section, tells the story, lower energy than chorus"
+      tips: "Each verse should advance the lyrical storyline. Melody is conversational."
+
+    - tag: "[pre-chorus]"
+      zh: "预副歌"
+      use: "Transitional section that builds tension before the chorus drops"
+      tips: "Creates anticipation. Usually shorter (2-4 bars). Harmonically unresolved."
+
+    - tag: "[chorus]"
+      zh: "副歌"
+      use: "Main hook, highest energy, most memorable and repeated section"
+      tips: "Should be instantly singable. Contains the title/core emotional message."
+
+    - tag: "[refrain]"
+      zh: "副歌（变体）"
+      use: "Shorter repeated hook, variant of chorus used in folk/country/blues"
+      tips: "Often a single repeated line rather than a full section."
+
+    - tag: "[bridge]"
+      zh: "桥段"
+      use: "Contrasting section that breaks the verse/chorus cycle, adds variety"
+      tips: "Appears once, usually before the final chorus. Different melody/harmony."
+
+    - tag: "[hook]"
+      zh: "记忆点 / 副歌（Hip-hop 用）"
+      use: "Catchy repeated section in hip-hop, shorter and punchier than a chorus"
+      tips: "Usually 4-8 bars, highly repetitive, catchphrase-style delivery."
+
+    - tag: "[build]"
+      zh: "蓄力段"
+      use: "Gradual energy accumulation leading into a drop or climax"
+      tips: "Use rising synths, drum fills, filter sweeps. Tension without resolution."
+
+    - tag: "[drop]"
+      zh: "释放段（EDM）"
+      use: "Peak energy release in EDM, the main beat kicks in after the build"
+      tips: "Maximum energy, full bass, all elements in. The emotional payoff."
+
+    - tag: "[break]"
+      zh: "间奏 / 休止段"
+      use: "Momentary energy dip, often stripped-back, before returning to intensity"
+      tips: "Can feature just kick+bass, or go fully minimal. Creates contrast."
+
+    - tag: "[solo]"
+      zh: "器乐独奏"
+      use: "Instrumental solo section, typically guitar, piano, or synth lead"
+      tips: "Usually replaces one verse in length. Melodically references the chorus."
+
+    - tag: "[interlude]"
+      zh: "间奏曲"
+      use: "Longer instrumental passage between sections, more developed than break"
+      tips: "Can introduce new melodic material or develop existing themes."
+
+    - tag: "[outro]"
+      zh: "尾声"
+      use: "Closing section, brings the song to an end"
+      tips: "Often a fade-out or final resolving chord. Can reprise the intro."
+
+    - tag: "[coda]"
+      zh: "结尾（古典/正式用法）"
+      use: "Formal concluding section, synonym for outro in classical contexts"
+      tips: "Use for cinematic or orchestral pieces for authenticity."
+
+    - tag: "[spoken word]"
+      zh: "朗读片段"
+      use: "Spoken (not sung) lyrical section, poetry or narrative delivery"
+      tips: "Great for storytelling moments. Suno will generate speech-style vocals."
+
+    - tag: "[ad lib]"
+      zh: "即兴哼唱"
+      use: "Improvised vocal adornments, runs, and fills"
+      tips: "Place at the end of sections or over outros. Adds human spontaneity."
+
+    - tag: "[theme A]"
+      zh: "主题 A（影视/古典用）"
+      use: "First main thematic idea in cinematic/orchestral compositions"
+      tips: "Establish the primary motif here. Reference it in development and climax."
+
+    - tag: "[development]"
+      zh: "发展段"
+      use: "Thematic development section in cinematic works, builds complexity"
+      tips: "Vary and transform Theme A. Add countermelodies, harmonic tension."
+
+    - tag: "[climax]"
+      zh: "高潮"
+      use: "Emotional and dynamic peak of the composition"
+      tips: "Full orchestration, maximum harmonic tension. The payoff moment."
+
+    - tag: "[resolution]"
+      zh: "解决段"
+      use: "Post-climax emotional release and harmonic resolution"
+      tips: "Quieter, cathartic. Leads naturally into the outro."
+
+
+# ═══════════════════════════════════════════════════════════
+# Energy Profile Definitions
+# ═══════════════════════════════════════════════════════════
+energy_profiles:
+  mountain:
+    description: "Starts medium, peaks at chorus, dips at bridge, peaks again"
+    typical_templates: ["pop_standard", "rock_alt", "ballad_slow"]
+    detection_hint: "energy rises ~30% at chorus vs verse, dips at bridge"
+
+  ascending_peak:
+    description: "Continuously rises to a single peak (drop), then brief outro"
+    typical_templates: ["edm_build_drop"]
+    detection_hint: "monotonically increasing RMS energy until final section"
+
+  dramatic_arc:
+    description: "Slow build through multiple acts to a climax, then resolution"
+    typical_templates: ["cinematic_orchestral"]
+    detection_hint: "wide dynamic range, gradual tempo/energy changes, no repeating segments"
+
+  steady_pulse:
+    description: "Relatively flat energy, rhythm-driven rather than dynamics-driven"
+    typical_templates: ["hiphop_rap"]
+    detection_hint: "low variance in RMS across segments, consistent beat"
+
+  gradual_swell:
+    description: "Very slow energy increase, emotional warmth over speed"
+    typical_templates: ["ballad_slow"]
+    detection_hint: "low BPM, energy increases subtly, large silence gaps"
+
+  plateau:
+    description: "Flat or slightly undulating energy, no clear peaks"
+    typical_templates: ["minimal_ambient"]
+    detection_hint: "very low dynamic range, no distinct segment boundaries"
+
+  high_energy:
+    description: "Consistently high energy throughout, minimal dips"
+    typical_templates: ["rock_alt", "edm_build_drop"]
+    detection_hint: "average RMS > 0.7, fast BPM, distorted timbres"
+
+
+# ═══════════════════════════════════════════════════════════
+# Template Selection Logic (ordered by priority)
+# ═══════════════════════════════════════════════════════════
+selection_rules:
+
+  # --- Genre-based (highest priority) ---
+  - priority: 1
+    condition: "genre contains any of ['edm', 'electronic', 'house', 'techno', 'trance', 'dubstep', 'future bass', 'dance']"
+    template: "edm_build_drop"
+    reason: "Genre is definitive EDM → use build-drop structure"
+
+  - priority: 2
+    condition: "genre contains any of ['hip-hop', 'rap', 'trap', 'drill', 'boom bap', 'lo-fi hip-hop']"
+    template: "hiphop_rap"
+    reason: "Genre is hip-hop family → use verse/hook structure"
+
+  - priority: 3
+    condition: "genre contains any of ['cinematic', 'orchestral', 'classical', 'neoclassical', 'soundtrack', 'score', 'epic']"
+    template: "cinematic_orchestral"
+    reason: "Genre is orchestral/cinematic → use thematic arc structure"
+
+  - priority: 4
+    condition: "genre contains any of ['ambient', 'drone', 'meditation', 'chillout', 'downtempo', 'new age']"
+    template: "minimal_ambient"
+    reason: "Genre is ambient/minimal → use loop/layer structure"
+
+  - priority: 5
+    condition: "genre contains any of ['rock', 'alt-rock', 'punk', 'grunge', 'metal', 'hard rock', 'emo']"
+    template: "rock_alt"
+    reason: "Genre is rock family → use verse/chorus/solo structure"
+
+  # --- Feature-based (when genre is unclear) ---
+  - priority: 6
+    condition: "danceability > 1.8 and bpm > 120 and has_vocals == false"
+    template: "edm_build_drop"
+    reason: "High danceability + fast BPM + no vocals → EDM pattern"
+
+  - priority: 7
+    condition: "bpm < 80 and danceability < 1.0 and has_vocals == true"
+    template: "ballad_slow"
+    reason: "Slow BPM + low danceability + vocals → ballad"
+
+  - priority: 8
+    condition: "bpm < 80 and danceability < 0.7 and has_vocals == false and dynamic_range > 15"
+    template: "cinematic_orchestral"
+    reason: "Slow + minimal dance + no vocals + wide dynamics → cinematic"
+
+  - priority: 9
+    condition: "bpm < 100 and danceability < 0.7 and has_vocals == false"
+    template: "minimal_ambient"
+    reason: "Low energy + no vocals + not cinematic → ambient"
+
+  - priority: 10
+    condition: "valence < 0.4 and bpm between 70 and 115 and has_vocals == true"
+    template: "hiphop_rap"
+    reason: "Dark tone + mid-tempo + vocals → hip-hop leaning"
+
+  - priority: 11
+    condition: "energy > 0.75 and bpm > 100 and has_vocals == true and key_type == 'minor'"
+    template: "rock_alt"
+    reason: "High energy + fast + vocals + minor key → rock"
+
+  # --- Segment-count-based fallback ---
+  - priority: 12
+    condition: "segment_count <= 3"
+    template: "minimal_ambient"
+    reason: "Very few segments → likely ambient or minimal structure"
+
+  - priority: 13
+    condition: "segment_count >= 6 and bpm between 90 and 130"
+    template: "pop_standard"
+    reason: "Many segments + mid-tempo → standard pop structure"
+
+  # --- Ultimate fallback ---
+  - priority: 99
+    condition: "no other rule matched"
+    template: "pop_standard"
+    reason: "Default fallback: pop standard is the most universal structure"
+
+
+# ═══════════════════════════════════════════════════════════
+# Energy Arc → Structure Inference Rules
+# ═══════════════════════════════════════════════════════════
+energy_arc_rules:
+
+  has_bridge:
+    condition: "energy sequence shows high→low→high pattern (dip ≥20% below chorus avg)"
+    action: "Include [bridge] between second chorus and final chorus"
+
+  has_build_drop:
+    condition: "energy rises monotonically for ≥60% of track then peaks sharply"
+    action: "Use [build]→[drop] pattern instead of [verse]→[chorus]"
+
+  has_solo:
+    condition: "mid-track segment with no vocal detected but melodic instrument prominent"
+    action: "Insert [solo] at that segment position"
+
+  intro_length:
+    condition: "first segment energy < 50% of max track energy"
+    action: "Mark as [intro]; if >30s consider splitting into [intro]+[verse]"
+
+  outro_fade:
+    condition: "final segment energy < 40% of max and duration > 15s"
+    action: "Mark as [outro] with fade; consider [coda] for orchestral pieces"
+
+  repeated_segment:
+    condition: "two or more segments have >80% spectral similarity"
+    action: "These are likely [chorus] or [hook] — repeat the tag accordingly"
+
+  unique_segment:
+    condition: "a segment has <50% similarity to all others"
+    action: "Likely [bridge], [development], or [interlude]"

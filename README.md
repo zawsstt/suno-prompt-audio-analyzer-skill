@@ -2,7 +2,7 @@
 
 Audio analysis + lyrics transcription + web knowledge fusion + LLM music producer synthesis + original song creation for Suno AI
 
-**Current version: v5.0**
+**Current version: v6.0**
 
 ---
 
@@ -10,37 +10,95 @@ Audio analysis + lyrics transcription + web knowledge fusion + LLM music produce
 
 Full pipeline for high-fidelity Suno music generation:
 
-1. **Song Identity Detection** *(v5 new)* — Auto-extract song name & artist from filename
-2. **Audio Feature Extraction** — BPM, key, chords, bassline, drums, EQ, LUFS, melody, structure
-3. **Web Knowledge Retrieval** *(v5 new)* — Fetch Wikipedia genre labels, music reviews, producer interviews, and lyrics analysis for the detected song
+1. **Song Identity Detection** — Auto-extract song name & artist from filename
+2. **Dual-Engine Audio Analysis** *(v6 new)* — Essentia (primary) + Librosa (secondary) for production-grade precision
+3. **Web Knowledge Retrieval** — Fetch Wikipedia genre labels, music reviews, producer interviews, and lyrics analysis
 4. **Lyrics Transcription** — Auto vocal transcription via Whisper with chorus detection
-5. **Knowledge Fusion & Style Tag Validation** *(v5 new)* — Three-way triangulation: web knowledge × audio data × Claude judgment to produce the most accurate Suno style prompt
-6. **Music Producer Synthesis** — Deep LLM analysis from a producer's perspective, integrating all data sources
-7. **Original Song Creation** — Brand-new title + full lyrics + Suno style prompt imitating the reference track's production DNA
+5. **Knowledge Fusion & Style Tag Validation** — Three-way triangulation: web knowledge × audio data × Claude judgment
+6. **Multi-Version Suno Prompt** *(v6 new)* — 3 prompt variants: Safe / Recommended / Experimental
+7. **Similarity Estimation** *(v6 new)* — 5-dimension score predicting how well Suno can replicate the source track
+8. **Music Producer Synthesis** — Deep LLM analysis from a producer's perspective
+9. **Original Song Creation** — Brand-new title + full lyrics + Suno style prompt imitating the reference track's DNA
 
 ---
 
-## Why v5 Is More Accurate
+## Changelog
 
-Pure audio analysis can measure BPM, key, and frequency data — but it can't know that a song uses a "Juno-106 synth pad" or belongs to "new wave". **Web knowledge fills this gap:**
+### v6.0 — Dual-Engine Architecture + Product-Grade Outputs
+- **Essentia primary engine**: `KeyExtractor` (strength 0.914 vs librosa 0.677), `RhythmExtractor2013` BPM (109.94 vs 112.3), `MusicExtractor` EBU R128 LUFS (-13.34 dB), `ChordsDetection+HPCP` chord histogram with Roman numerals, `Danceability` metric
+- **Spotify-like semantic features**: valence / energy / danceability / acousticness / instrumentalness
+- **Cinematic/Orchestral genre category** added (Hans Zimmer / John Williams styles)
+- **5-dimensional genre inference**: danceability + valence + BPM + key + LUFS
+- **4-dimensional Suno mood mapping**: Danceability × Valence × Energy × Key → 8 precise mood words
+- **Three-version Suno prompt output** (Step 3c): Safe / Recommended / Experimental
+- **Similarity score** (Step 3d): 5-dimension pre-generation quality prediction
+- **Suno style tag library** (`suno_tag_library.yaml`): 393 community-validated tags, 7 categories, 15 power combos, 12 forbidden combos
+- **Song structure templates** (`suno_structure_templates.yaml`): 7 song form templates, 13 auto-selection rules, 18 annotated Suno structure tags
+- **Lyric scaffold templates** (`suno_lyric_scaffolds.md`): 3 complete scaffolds with placeholder annotations
+- **Graceful fallback** to librosa-only mode if essentia unavailable
 
-| Source | What It Provides |
+### v5.0 — Web Knowledge Fusion
+- Song name detection from filename, web knowledge retrieval from 4 sources (Wikipedia / reviews / producer interviews / lyrics), three-way triangulation protocol, priority override: Wikipedia > reviews > script data
+
+### v4.0 — Multi-Signal Genre Scoring
+- 12+ genre scoring system, genre-aware bass/drum tag selection, modal mood cross-validated with genre context
+
+---
+
+## Why v6 Is More Accurate
+
+### Engine Comparison
+
+| Metric | librosa (v4/v5) | Essentia (v6) | Improvement |
+|---|---|---|---|
+| Key detection | A# minor, conf=0.677 | **D minor, strength=0.914** | +35% confidence |
+| BPM | 112.3 | **109.94** | EBU-standard precision |
+| LUFS | -16.2 (approx) | **-13.34** (EBU R128) | Industry standard |
+| Chords | Basic triads only | **Chord histogram** (Dm 44%, D 14.8%, G 11.5%…) | Full distribution |
+| Genre | BPM+hihat rules | **5-dim scoring** (dance+valence+BPM+key+LUFS) | Cinematic recognized |
+
+*Test file: F1 Hans Zimmer theme. librosa misclassified as Trap/Hip-hop; v6 correctly identified as Cinematic/Orchestral.*
+
+### New Semantic Features (Spotify-like)
+
+```json
+"spotify_like_features": {
+  "valence": 0.28,        // emotional positivity (0=dark, 1=happy)
+  "energy": 0.82,         // intensity level
+  "danceability": 0.68,   // rhythmic drive
+  "acousticness": 0.35,   // acoustic vs electronic ratio
+  "instrumentalness": 0.98 // vocal presence estimate
+}
+```
+
+### Multi-Version Prompt Output (Step 3c)
+
+| Version | Strategy | Character Count |
+|---|---|---|
+| 🟢 Safe | Highest-confidence tags only | ≤60 chars |
+| 🎯 Recommended | Balanced precision + creativity | ≤120 chars |
+| 🔥 Experimental | Power combos + niche descriptors | ≤120 chars |
+
+### Similarity Estimation (Step 3d)
+
+Before generating, get a 5-star prediction across:
+- Rhythm fit (BPM range)
+- Tonal clarity (key strength)
+- Harmonic complexity (chord variety)
+- Dynamics reachability (LUFS zone)
+- Genre clarity (genre score gap)
+
+---
+
+## Included Files
+
+| File | Description |
 |---|---|
-| Wikipedia | Precise genre labels defined by music scholars (highest authority) |
-| Music reviews | Timbre/texture descriptors ("pulsing synth arpeggios", "gated reverb drums") |
-| Producer interviews | Gear & techniques ("Roland TR-808", "pitched vocal sample") |
-| Lyrics analysis | Theme, imagery, writing style |
-
-**Example — The Weeknd - Blinding Lights:**
-
-| Version | Suno Style Prompt |
-|---|---|
-| Script only | `driving, melancholic, four-on-the-floor` |
-| v5 with web fusion | `synth-pop, new wave, pulsing synth arpeggios, gated reverb drums, 80s aesthetic, melancholic, driving` |
-
-The v5 prompt contains vocabulary directly from how humans describe the song — which is exactly what Suno was trained on.
-
-> **How to enable:** Simply name your audio file after the song (e.g. `The Weeknd - Blinding Lights.mp3`). Claude will auto-detect the title and fetch knowledge automatically.
+| `scripts/analyze_audio.py` | Main analysis script (dual-engine, 1266 lines) |
+| `SKILL.md` | Full pipeline instructions for Claude |
+| `suno_tag_library.yaml` | 393 validated Suno style tags, 7 categories, feature→tag mapping rules |
+| `suno_structure_templates.yaml` | 7 song form templates, 18 annotated structure tags, 13 auto-selection rules |
+| `suno_lyric_scaffolds.md` | 3 complete lyric scaffold templates with placeholder annotations |
 
 ---
 
@@ -56,8 +114,10 @@ The v5 prompt contains vocabulary directly from how humans describe the song —
 
 ```bash
 pip install librosa soundfile scipy faster-whisper
+pip install essentia   # recommended — enables v6 dual-engine mode
 ```
 
+> If `essentia` install fails (requires gcc), the skill automatically falls back to librosa-only mode.
 > `ffprobe` is required (comes with `ffmpeg`). First Whisper run downloads the small model (~245MB), cached at `/tmp/whisper_models`.
 
 ### 2. Install the skill
@@ -74,126 +134,66 @@ Place the skill folder under your OpenClaw skills directory:
 
 ### Basic
 
-Run the analysis script on any audio file:
-
 ```bash
 python3 ~/.openclaw/skills/audio-analyzer/scripts/analyze_audio.py <file_path>
 ```
 
-Or download from URL first:
+Output: JSON with all audio features including `essentia_features`, `spotify_like_features`, `chord_histogram`, and `analysis_engine` fields.
+
+### With Song Name (enables web knowledge fusion)
 
 ```bash
-curl -sL -o /tmp/files/$(date +%s).wav "<URL>"
+# Rename file to song name before analysis
+mv recording.mp3 "The Weeknd - Blinding Lights.mp3"
+python3 analyze_audio.py "The Weeknd - Blinding Lights.mp3"
 ```
 
-### Recommended: Name Your File After the Song
-
-For best results, rename the audio file to the song name before uploading:
-
-```
-# Format: Artist - Title.ext
-The Weeknd - Blinding Lights.mp3
-Kendrick Lamar - Not Like Us.mp3
-Daft Punk - Get Lucky.flac
-
-# Or just title
-Blinding Lights.mp3
-```
-
-Claude will auto-detect the song identity and fetch web knowledge to enhance the Suno prompt.
-
-Then ask Claude:
-
-- `分析这首歌` / `analyze this audio`
-- `帮我仿写这首歌的风格`
-- `给我生成 Suno prompt`
-- `这首歌的 BPM 和调性是什么`
+Claude will auto-detect the title and fetch Wikipedia + reviews for style fusion.
 
 ---
 
-## Pipeline (v5)
+## Output JSON Structure (v6)
 
+```json
+{
+  "analysis_engine": {
+    "primary": "essentia",
+    "secondary": "librosa",
+    "fallback": false
+  },
+  "essentia_features": {
+    "bpm": 109.94,
+    "lufs_integrated": -13.34,
+    "lufs_range": 8.92,
+    "danceability": 1.35,
+    "key_extractor": { "key": "D", "scale": "minor", "strength": 0.914 },
+    "chord_histogram": { "Dm": 44.0, "D": 14.8, "G": 11.5, "Am": 7.6 }
+  },
+  "spotify_like_features": {
+    "valence": 0.28,
+    "energy": 0.82,
+    "danceability": 0.68,
+    "acousticness": 0.35,
+    "instrumentalness": 0.98
+  },
+  "tonality": { "key": "D", "mode": "minor", "modal_flavor": "Aeolian" },
+  "summary": { "tempo_bpm": 110, "key_signature": "D minor" },
+  "suno_prompt": { "style_tags": "cinematic orchestral, epic, dark, driving, wide dynamics" }
+}
 ```
-Step 0   Song identity detection    →  filename → song name + artist
-Step 1   Run analysis script        →  raw JSON (audio features + whisper lyrics)
-Step 1b  Web knowledge retrieval    →  Wikipedia, reviews, producer info, lyrics analysis
-Step 2   Present analysis report    →  structured sections ①–⑫
-Step 3   Knowledge fusion + style validation  →  triangulate web + audio + Claude
-Step 4   Original song creation     →  new title + full lyrics + Suno prompt
-```
-
----
-
-## Output Sections
-
-| Section | Content |
-|---|---|
-| ① 响度 & 动态 | RMS / LUFS / Crest Factor / Dynamic Range |
-| ② 频段能量 | 7-band EQ reference bar chart |
-| ③ 节奏 & 律动 | BPM / Swing / Time Signature |
-| ④ 鼓组 Pattern | Kick / Snare / HiHat timeline |
-| ⑤ Bassline | Root note sequence + MIDI suggestions |
-| ⑥ 和弦进行 | Core loop + Roman numerals + transitions |
-| ⑦ 调性 & 音阶 | Key / Mode / Relative key / Chroma energy |
-| ⑧ 调性时间轴 | Key changes every 15 seconds |
-| ⑨ 旋律轮廓 | Range / Dominant notes / Opening contour |
-| ⑩ 能量弧度 & 结构 | RMS+Flux timeline / Segment detection |
-| ⑪ 音色 & 频谱 | Centroid / Bandwidth / Rolloff / Brightness |
-| ⑫ 歌词识别 | Whisper transcript + chorus candidates |
-
----
-
-## Suno Prompt Rules
-
-| Mode | Field | Char Limit |
-|---|---|---|
-| Instrumental (Link A) | Style only | ≤ 200 chars |
-| With Lyrics (Link B) | Style of Music | ≤ 120 chars |
-| With Lyrics (Link B) | Lyrics | ≤ 3000 chars |
 
 ---
 
 ## Accuracy
 
-| Dimension | Accuracy | Notes |
+| Dimension | Rating | Notes |
 |---|---|---|
-| BPM | ★★★★ | ±1 BPM |
-| Key / Mode | ★★★ | KS algorithm; modulating songs less accurate |
-| Chords | ★★★ | Triads only, no extensions |
-| Bassline | ★★★★ | pyin tracking, first 90s |
-| Drums | ★★★ | Band separation, first 8 bars |
-| Lyrics (Whisper) | ★★★ | English best; degrades with heavy mix |
-| **Genre Detection** | **★★★★★** | **v5: Wikipedia (highest authority) + v4 multi-signal scoring** |
-| **Style Tags** | **★★★★★** | **v5: Web knowledge fusion × audio data × Claude triangulation** |
-| LLM Synthesis | ★★★★ | Quality scales with available data |
-| Imitation Lyrics | ★★★★ | Style-matched, 100% original content |
-| **Suno Prompt** | **★★★★★** | **v5: Human music knowledge + audio science + Claude judgment** |
-
----
-
-## Changelog
-
-### v5.0 (2026-03-31)
-- **Step 0**: Song identity detection from filename (supports `Artist - Title.ext` and `Title.ext` formats)
-- **Step 1b**: Web knowledge retrieval pipeline with 4 source priority tiers (Wikipedia > reviews > producer interviews > lyrics analysis)
-- **Step 3a**: Three-way knowledge fusion protocol — web knowledge overrides script when they conflict
-- Wikipedia genre labels now take highest priority over script-based genre detection
-- Music review timbre/texture descriptors fused directly into Suno style prompt
-
-### v4.0 (2026-03-31)
-- Multi-signal genre scoring system (12+ genres × 5+ signal dimensions each)
-- Genre-aware bass tag selection: `808 bass` only in hip-hop context; DnB sub bass → `rolling bass`
-- Pattern-aware drum tags: trap hi-hats vs. four-on-the-floor vs. breakbeat drums
-- Modal mood cross-validated with genre context (e.g. Phrygian × EDM → `dark and ominous`, not `brooding`)
-- Added `genre_scores` field to JSON output for confidence transparency
-- Added `llm_synthesis_hint` field for Claude's style validation step
-- Script: 776 → 941 lines
-
-### v3.0 (prior)
-- Initial release with audio feature extraction, Whisper transcription, LLM synthesis, and Suno prompt generation
-
----
-
-## Keywords
-
-`分析音频` `suno prompt` `歌词识别` `仿写歌曲` `创作歌词` `模仿创作` `编曲参考` `BPM` `和弦进行` `调性` `bassline` `audio analysis` `lyrics transcription` `imitation composition` `original song creation` `style tags` `genre detection` `web knowledge fusion`
+| BPM | ★★★★★ | Essentia RhythmExtractor2013, EBU standard |
+| Key/Mode | ★★★★★ | Essentia KeyExtractor, strength 0.9+ |
+| Chords | ★★★★ | ChordsDetection+HPCP, chord histogram with % distribution |
+| Bassline | ★★★★ | pyin tracking, first 90s effective |
+| Drums | ★★★ | Frequency-band separation, first 8 bars effective |
+| Lyrics | ★★★ | faster-whisper small, English best |
+| Genre | ★★★★★ | Wikipedia (v5) + 5-dim Essentia scoring (v6) |
+| Style Tags | ★★★★★ | Web knowledge fusion × Essentia data × Claude triangulation |
+| Suno Prompt | ★★★★★ | 3-version output + similarity pre-check |

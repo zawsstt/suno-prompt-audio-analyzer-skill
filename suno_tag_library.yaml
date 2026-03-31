@@ -1,0 +1,715 @@
+# Suno AI Style Tag Library v1.0
+# Generated for audio-analyzer skill v6
+# Last updated: 2026-03-31
+# Total tags: 200+
+# Purpose: Precise Suno AI prompt generation from audio analysis features
+
+# =============================================================================
+# GENRE TAGS (流派)
+# =============================================================================
+genre:
+  # --- Pop & Rock ---
+  pop_rock:
+    - pop
+    - indie pop
+    - synth pop
+    - dream pop
+    - art pop
+    - chamber pop
+    - power pop
+    - bubblegum pop
+    - rock
+    - indie rock
+    - alternative rock
+    - post-rock
+    - progressive rock
+    - psychedelic rock
+    - garage rock
+    - classic rock
+    - hard rock
+    - soft rock
+    - shoegaze
+    - grunge
+
+  # --- Electronic ---
+  electronic:
+    - electronic
+    - synthpop
+    - electropop
+    - EDM
+    - house
+    - deep house
+    - tech house
+    - progressive house
+    - techno
+    - trance
+    - drum and bass
+    - dubstep
+    - future bass
+    - lo-fi
+    - chillwave
+    - vaporwave
+    - darkwave
+    - industrial
+    - ambient
+    - dark ambient
+    - IDM
+    - glitch
+    - trip-hop
+    - downtempo
+
+  # --- Hip-Hop & R&B ---
+  hip_hop_rnb:
+    - hip-hop
+    - rap
+    - lo-fi hip-hop
+    - trap
+    - boom bap
+    - conscious rap
+    - drill
+    - cloud rap
+    - phonk
+    - R&B
+    - neo-soul
+    - soul
+    - funk
+    - disco
+
+  # --- Jazz & Blues ---
+  jazz_blues:
+    - jazz
+    - smooth jazz
+    - jazz fusion
+    - bebop
+    - cool jazz
+    - jazz noir
+    - blues
+    - blues rock
+    - delta blues
+    - swing
+
+  # --- Classical & Orchestral (Cinematic) ---
+  cinematic:  # ★ Hans Zimmer / John Williams 类型专区
+    - orchestral
+    - cinematic
+    - epic orchestral
+    - film score
+    - classical
+    - neo-classical
+    - romantic classical
+    - chamber music
+    - minimalist classical
+    - symphonic
+    - baroque
+    - choral
+
+  # --- World & Folk ---
+  world_folk:
+    - folk
+    - indie folk
+    - acoustic folk
+    - country
+    - americana
+    - bluegrass
+    - celtic
+    - flamenco
+    - bossa nova
+    - reggae
+    - reggaeton
+    - afrobeats
+    - latin pop
+
+  # --- Metal ---
+  metal:
+    - metal
+    - heavy metal
+    - death metal
+    - black metal
+    - doom metal
+    - post-metal
+    - math rock
+
+# =============================================================================
+# MOOD TAGS (情绪/氛围)
+# Grouped by valence (low → high) and energy (low → high)
+# =============================================================================
+mood:
+  # --- Low Valence (dark / sad / tense) ---
+  dark_low_valence:
+    - dark
+    - melancholic
+    - sad
+    - sorrowful
+    - haunting
+    - brooding
+    - ominous
+    - tense
+    - eerie
+    - sinister
+    - dystopian
+    - gloomy
+    - noir
+    - desolate
+    - mournful
+
+  # --- Neutral / Bittersweet ---
+  neutral_bittersweet:
+    - bittersweet
+    - nostalgic
+    - reflective
+    - contemplative
+    - introspective
+    - mysterious
+    - wistful
+    - longing
+    - pensive
+    - understated
+
+  # --- High Valence (uplifting / happy) ---
+  uplifting_high_valence:
+    - uplifting
+    - euphoric
+    - joyful
+    - happy
+    - playful
+    - carefree
+    - triumphant
+    - hopeful
+    - bright
+    - warm
+    - romantic
+    - celebratory
+    - anthemic
+
+  # --- Low Energy (atmospheric / dreamy) ---
+  atmospheric_low_energy:
+    - atmospheric
+    - dreamy
+    - ethereal
+    - hypnotic
+    - meditative
+    - spacious
+    - floating
+    - ambient
+    - cinematic atmosphere
+    - lush
+
+  # --- Mid Energy (driving / steady) ---
+  driving_mid_energy:
+    - driving
+    - steady
+    - focused
+    - determined
+    - cool
+    - smooth
+    - groovy
+    - laid-back
+    - soulful
+
+  # --- High Energy (intense / aggressive) ---
+  intense_high_energy:
+    - intense
+    - aggressive
+    - powerful
+    - explosive
+    - raw
+    - energetic
+    - frenetic
+    - urgent
+    - chaotic
+    - adrenaline
+
+# =============================================================================
+# INSTRUMENT TAGS (乐器/音色)
+# =============================================================================
+instrument:
+  # --- Acoustic Instruments ---
+  acoustic:
+    - acoustic guitar
+    - classical guitar
+    - fingerpicked guitar
+    - piano
+    - upright bass
+    - double bass
+    - strings
+    - violin
+    - cello
+    - viola
+    - brass
+    - trumpet
+    - trombone
+    - french horn
+    - saxophone
+    - flute
+    - clarinet
+    - oboe
+    - drums
+    - percussion
+    - marimba
+    - xylophone
+    - harp
+    - banjo
+    - mandolin
+    - ukulele
+
+  # --- Electric / Amplified ---
+  electric:
+    - electric guitar
+    - clean guitar
+    - distorted guitar
+    - overdriven guitar
+    - chorus guitar
+    - tremolo guitar
+    - whammy guitar
+    - slide guitar
+    - bass guitar
+    - slap bass
+    - fingered bass
+    - fretless bass
+    - electric piano
+    - rhodes
+    - wurlitzer
+    - organ
+    - hammond organ
+    - electric violin
+
+  # --- Timbral Descriptions ---
+  timbral:
+    - plucked strings
+    - pizzicato
+    - bowed strings
+    - staccato strings
+    - tremolo strings
+    - orchestral swell
+    - brass stabs
+    - horn section
+    - choral pads
+
+  # --- Electronic / Synthesizer ---
+  electronic_synth:
+    - 808 bass
+    - 909 drums
+    - analog synth
+    - modular synth
+    - Juno-106 pad
+    - Prophet-5 synth
+    - Moog bass
+    - Moog lead
+    - TB-303 bass
+    - arp synth
+    - polysynth
+    - FM synth
+    - wavetable synth
+    - granular synth
+    - synth pad
+    - synth lead
+    - synth arpeggio
+    - drum machine
+    - TR-808 drums
+    - TR-909 drums
+    - sequenced bass
+    - saw wave lead
+    - square wave bass
+    - sub bass
+    - pad
+
+# =============================================================================
+# TEXTURE / PRODUCTION TAGS (质地/制作风格)
+# =============================================================================
+texture_production:
+  reverb_space:
+    - reverb
+    - heavy reverb
+    - plate reverb
+    - hall reverb
+    - cavernous reverb
+    - dry
+    - room sound
+
+  delay_echo:
+    - delay
+    - tape delay
+    - slapback echo
+    - ping-pong delay
+    - echo
+
+  dynamics:
+    - punchy
+    - compressed
+    - heavily compressed
+    - dynamic
+    - transient-heavy
+    - loud
+    - wall of sound
+
+  width_depth:
+    - wide
+    - spacious
+    - stereo width
+    - intimate
+    - close-mic
+    - distant
+    - layered
+
+  fidelity:
+    - lo-fi
+    - hi-fi
+    - warm
+    - crisp
+    - vintage
+    - analog warmth
+    - tape saturation
+    - overdriven
+    - pristine production
+    - polished
+    - raw production
+    - bedroom recording
+
+  vocal_texture:
+    - layered vocals
+    - vocal harmonies
+    - vocal chops
+    - vocal reverb tail
+    - whispery vocals
+    - processed vocals
+
+# =============================================================================
+# TEMPO / RHYTHM TAGS (节奏特征)
+# =============================================================================
+tempo_rhythm:
+  # --- BPM-anchored descriptors ---
+  bpm_descriptors:
+    - slow
+    - ballad tempo
+    - dirge
+    - mid-tempo
+    - laid-back groove
+    - moderate
+    - steady pulse
+    - upbeat
+    - fast
+    - pumping
+    - frenetic
+    - breakneck
+    - high-octane
+
+  # --- Rhythmic Feel ---
+  rhythmic_feel:
+    - driving
+    - propulsive
+    - syncopated
+    - swung
+    - straight
+    - polyrhythmic
+    - groove
+    - head-nodding
+    - danceable
+    - infectious beat
+    - four-on-the-floor
+    - half-time
+    - double-time
+    - shuffle
+    - swing feel
+    - off-beat
+
+  # --- Pattern Descriptors ---
+  pattern:
+    - arpeggiated
+    - ostinato
+    - staccato rhythm
+    - rubato
+    - free-form
+    - metronomic
+    - building
+    - tension-release
+
+# =============================================================================
+# VOCAL TAGS (人声)
+# =============================================================================
+vocal:
+  # --- Style / Technique ---
+  style:
+    - breathy
+    - falsetto
+    - raspy
+    - gravelly
+    - smooth
+    - silky
+    - powerful
+    - belting
+    - whispery
+    - conversational
+    - operatic
+    - crooning
+
+  # --- Group / Arrangement ---
+  arrangement:
+    - choir
+    - harmonies
+    - call and response
+    - unison vocals
+    - a cappella
+    - backing vocals
+    - gospel choir
+    - barbershop
+
+  # --- Production / Processing ---
+  processing:
+    - auto-tune
+    - heavy auto-tune
+    - pitch-shifted
+    - vocoder
+    - talk box
+    - reverb vocals
+    - distorted vocals
+    - layered vocals
+
+  # --- Delivery Style ---
+  delivery:
+    - rap
+    - spoken word
+    - spoken word poetry
+    - melodic rap
+    - singing
+    - chanting
+    - humming
+    - scat
+
+# =============================================================================
+# CINEMATIC / FILM SCORE SPECIAL ZONE
+# ★ Optimized for Hans Zimmer / John Williams style
+# =============================================================================
+cinematic_special:
+  epic_orchestral:
+    - epic
+    - cinematic
+    - orchestral swell
+    - tension building
+    - dramatic
+    - grandiose
+    - majestic
+    - soaring
+    - triumphant
+    - heroic
+    - battle theme
+    - adventure theme
+    - chase sequence
+    - suspense
+    - thriller
+    - climactic
+    - emotional score
+    - tearjerker
+    - inspirational
+    - ethereal choir
+    - ostinato strings
+    - low brass menace
+    - rising strings
+    - staccato brass
+    - percussion crescendo
+    - hybrid orchestral  # ★ Hans Zimmer signature
+    - electronic orchestra  # ★ Hans Zimmer signature
+    - trailer music
+    - epic trailer
+    - dark orchestral
+    - space epic
+
+# =============================================================================
+# FEATURE-TO-TAG MAPPING RULES
+# Used by audio-analyzer to convert analysis output → Suno style tags
+# =============================================================================
+feature_mapping:
+  bpm:
+    "< 70":
+      tags: ["slow", "ballad", "dirge"]
+      note: "Very slow, ballad or dirge territory"
+    "70-90":
+      tags: ["mid-tempo", "laid-back", "groove"]
+      note: "Relaxed groove, hip-hop, chill"
+    "90-110":
+      tags: ["moderate", "steady", "driving"]
+      note: "Standard rock/pop feel"
+    "110-130":
+      tags: ["upbeat", "energetic", "driving"]
+      note: "Dance-ready energy"
+    "130-150":
+      tags: ["fast", "pumping", "intense"]
+      note: "EDM, drum and bass, thrash territory"
+    "> 150":
+      tags: ["frenetic", "breakneck", "high-octane"]
+      note: "Extreme tempo — metal, jungle, gabber"
+
+  key_scale:
+    major_keys:
+      tags: ["bright", "uplifting", "happy", "triumphant"]
+      note: "Major = generally positive valence"
+    minor_keys:
+      tags: ["dark", "melancholic", "tense", "brooding"]
+      note: "Minor = generally negative valence"
+    dorian:
+      tags: ["soulful", "bluesy", "warm minor"]
+      note: "Dorian mode — jazz, soul, funk"
+    phrygian:
+      tags: ["exotic", "dark", "flamenco-esque"]
+      note: "Phrygian — flamenco, metal, middle-eastern"
+    lydian:
+      tags: ["dreamy", "magical", "floating"]
+      note: "Lydian — film scores, fantasy"
+    mixolydian:
+      tags: ["bluesy", "rock", "earthy"]
+      note: "Mixolydian — rock, folk, funk"
+
+  danceability:
+    # Essentia danceability scale (higher = more danceable)
+    "> 1.5":
+      tags: ["groove", "rhythmic", "danceable", "infectious beat"]
+      note: "Highly danceable"
+    "1.0-1.5":
+      tags: ["driving", "steady pulse", "head-nodding"]
+      note: "Moderately rhythmic"
+    "< 1.0":
+      tags: ["atmospheric", "flowing", "free-form"]
+      note: "Non-danceable, ambient or complex rhythm"
+
+  lufs:
+    # Integrated loudness (LUFS)
+    "> -9":
+      tags: ["heavily compressed", "loud", "wall of sound", "radio-ready"]
+      note: "Over-compressed, modern pop/EDM mastering"
+    "-9 to -14":
+      tags: ["punchy", "dynamic", "well-produced"]
+      note: "Typical commercial mastering"
+    "-14 to -18":
+      tags: ["dynamic", "spacious", "audiophile"]
+      note: "Wider dynamic range"
+    "< -18":
+      tags: ["quiet", "intimate", "acoustic", "sparse"]
+      note: "Very dynamic — classical, acoustic, ambient"
+
+  spectral_centroid:
+    # Brightness proxy
+    "high (> 3000 Hz avg)":
+      tags: ["bright", "crisp", "airy", "treble-heavy"]
+    "mid (1500-3000 Hz)":
+      tags: ["balanced", "natural", "full-range"]
+    "low (< 1500 Hz)":
+      tags: ["warm", "dark", "bass-heavy", "lo-fi"]
+
+  energy:
+    # RMS / perceived energy
+    "high (> 0.3 RMS)":
+      tags: ["intense", "powerful", "loud", "aggressive"]
+    "mid (0.1-0.3 RMS)":
+      tags: ["driving", "energetic", "dynamic"]
+    "low (< 0.1 RMS)":
+      tags: ["soft", "delicate", "quiet", "intimate"]
+
+# =============================================================================
+# FORBIDDEN COMBINATIONS
+# Tags that produce contradictory/incoherent Suno results — never use together
+# =============================================================================
+forbidden_combos:
+  - tags: ["808 bass", "acoustic guitar"]
+    reason: "Electronic trap element conflicts with organic acoustic texture"
+  - tags: ["orchestral", "trap beat"]
+    reason: "Contradictory production styles — use 'hybrid orchestral' instead if needed"
+  - tags: ["lo-fi", "pristine production"]
+    reason: "Directly contradictory fidelity descriptors"
+  - tags: ["lo-fi", "radio-ready"]
+    reason: "Lo-fi implies imperfection; radio-ready implies polish"
+  - tags: ["classical", "808 bass"]
+    reason: "Anachronistic instrument combination"
+  - tags: ["acoustic", "heavily compressed"]
+    reason: "Acoustic implies dynamics; heavy compression kills them"
+  - tags: ["sparse", "wall of sound"]
+    reason: "Directly opposite production density"
+  - tags: ["intimate", "epic"]
+    reason: "Contradictory scale/scope"
+  - tags: ["a cappella", "drum machine"]
+    reason: "A cappella means no instruments including drums"
+  - tags: ["free-form", "four-on-the-floor"]
+    reason: "Free rhythm vs. rigid dance groove"
+  - tags: ["spoken word", "falsetto"]
+    reason: "Contradictory vocal delivery modes"
+  - tags: ["ambient", "breakneck"]
+    reason: "Ambient implies slow-paced; breakneck is extreme speed"
+
+# =============================================================================
+# HIGH-IMPACT POWER COMBOS (Community Verified)
+# Tag combinations with exceptional Suno output quality
+# =============================================================================
+power_combos:
+  - tags: ["slap bass", "funky", "70s soul"]
+    description: "Classic 70s funk — Earth Wind & Fire territory"
+    recommended_bpm: "100-120"
+
+  - tags: ["synthpop", "analog synth", "driving", "Juno-106 pad"]
+    description: "80s synth wave — Depeche Mode / New Order energy"
+    recommended_bpm: "115-130"
+
+  - tags: ["lo-fi hip-hop", "boom bap", "tape saturation", "jazz sample"]
+    description: "Chill lo-fi study beats — nostalgic and relaxed"
+    recommended_bpm: "70-90"
+
+  - tags: ["epic orchestral", "hybrid orchestral", "tension building", "ostinato strings"]
+    description: "Hans Zimmer signature — Inception / Interstellar style"
+    recommended_bpm: "60-100"
+
+  - tags: ["dark ambient", "eerie", "granular synth", "heavy reverb"]
+    description: "Atmospheric horror/thriller score — unsettling texture"
+    recommended_bpm: "40-70"
+
+  - tags: ["dream pop", "shoegaze", "wall of sound", "breathy"]
+    description: "My Bloody Valentine / Cocteau Twins texture"
+    recommended_bpm: "80-110"
+
+  - tags: ["trap", "808 bass", "hi-hat rolls", "dark", "melodic rap"]
+    description: "Modern trap banger — Atlanta sound"
+    recommended_bpm: "130-145"
+
+  - tags: ["neo-soul", "rhodes", "soulful", "harmonies", "laid-back groove"]
+    description: "D'Angelo / Erykah Badu vibes — warm and organic"
+    recommended_bpm: "75-95"
+
+  - tags: ["post-rock", "crescendo", "emotional", "reverb", "instrumental"]
+    description: "Explosions in the Sky climax build — cinematic instrumental"
+    recommended_bpm: "90-130"
+
+  - tags: ["future bass", "euphoric", "synth lead", "chopped vocals", "uplifting"]
+    description: "Flume / ODESZA festival energy"
+    recommended_bpm: "135-155"
+
+  - tags: ["jazz noir", "noir", "muted trumpet", "sparse", "mysterious"]
+    description: "Film noir jazz — smoky bar at midnight"
+    recommended_bpm: "60-85"
+
+  - tags: ["acoustic folk", "fingerpicked guitar", "intimate", "warm", "storytelling"]
+    description: "Iron & Wine / Bon Iver acoustic intimacy"
+    recommended_bpm: "65-100"
+
+  - tags: ["house", "four-on-the-floor", "deep", "punchy", "danceable"]
+    description: "Chicago house stomp — pure dancefloor"
+    recommended_bpm: "120-128"
+
+  - tags: ["heavy metal", "distorted guitar", "aggressive", "double kick", "raw"]
+    description: "Classic metal aggression — Metallica / Pantera"
+    recommended_bpm: "140-200"
+
+  - tags: ["bossa nova", "nylon guitar", "warm", "laid-back", "jazzy"]
+    description: "Brazilian bossa nova — Jobim territory"
+    recommended_bpm: "100-120"
+
+# =============================================================================
+# GENRE → DEFAULT INSTRUMENT HINTS
+# Quick-lookup to avoid instrument-genre mismatches
+# =============================================================================
+genre_instrument_hints:
+  trap: ["808 bass", "TR-808 drums", "hi-hat rolls", "synth pad"]
+  jazz: ["upright bass", "rhodes", "trumpet", "saxophone", "brushed drums"]
+  classical: ["strings", "piano", "brass", "woodwinds", "harp"]
+  lo-fi hip-hop: ["boom bap drums", "rhodes", "acoustic bass", "tape saturation"]
+  synthpop: ["Juno-106 pad", "analog synth", "drum machine", "bass synth"]
+  post-rock: ["electric guitar", "reverb", "bass guitar", "dynamics"]
+  folk: ["acoustic guitar", "fingerpicked guitar", "violin", "banjo"]
+  reggae: ["electric guitar", "organ", "bass guitar", "off-beat rhythm"]
+  funk: ["slap bass", "brass section", "wah guitar", "tight drums"]
+  cinematic: ["orchestral strings", "brass", "choir", "percussion", "synth pads"]

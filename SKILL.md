@@ -1,11 +1,11 @@
 ---
 name: audio-analyzer
 description: "Audio analysis + lyrics transcription + LLM music producer synthesis + original song creation for Suno AI. Analyzes audio files (MP3/WAV/FLAC/AAC/OGG/M4A) returning key/mode/chords/bassline/drums/EQ/LUFS/BPM/melody/structure, auto vocal transcription with chorus detection, deep producer-perspective synthesis integrating audio features and lyric themes, then creates a brand-new original song (title + full lyrics + Suno style prompt ≤200 chars) imitating the reference track's style and production DNA. Keywords: 分析音频, suno prompt, 歌词识别, 仿写歌曲, 创作歌词, 模仿创作, 编曲参考, BPM, 和弦进行, 调性, bassline, audio analysis, lyrics transcription, imitation composition, original song creation."
-version: "5.0"
-changelog: "v5 — Song name detection from filename + web knowledge retrieval (genre articles, reviews, Wikipedia, producer interviews) fused into final Suno prompt for high-fidelity style replication. v4 — Multi-signal genre scoring system, genre-aware bass/drum tag selection, modal mood cross-validated with genre context, LLM synthesis hint."
+version: "6.0"
+changelog: "v6 — Dual-engine architecture: Essentia (primary, production-grade precision) + Librosa (secondary). New: EBU R128 LUFS via MusicExtractor, KeyExtractor (strength 0.9+), RhythmExtractor2013 BPM, ChordsDetection+HPCP chord histogram with Roman numerals, Essentia Danceability, Spotify-like features (valence/energy/danceability/acousticness/instrumentalness), Cinematic/Orchestral genre category, 5-dim genre scoring, 4-dim Suno mood mapping. Graceful fallback to librosa-only if essentia unavailable. v5 — Song name detection from filename + web knowledge retrieval (genre articles, reviews, Wikipedia, producer interviews) fused into final Suno prompt for high-fidelity style replication. v4 — Multi-signal genre scoring system, genre-aware bass/drum tag selection, modal mood cross-validated with genre context, LLM synthesis hint."
 ---
 
-# Audio Analyzer v5 — Production Analysis + Web Knowledge Fusion + Original Song for Suno
+# Audio Analyzer v6 — Dual-Engine Production Analysis + Web Knowledge Fusion + Original Song for Suno
 
 Full pipeline: audio feature extraction → **song identity detection → web knowledge retrieval** → vocal transcription → music producer deep analysis → original song creation → Suno prompt.
 
@@ -355,6 +355,141 @@ Wikipedia genre: "synth-pop, new wave, R&B"
 
 ---
 
+## Step 3c — 多版本 Suno Prompt 输出（P1 v6 新增）
+
+**基于 v6 的 `essentia_features` + `spotify_like_features`，为同一首曲生成三套 Suno Style Prompt，覆盖不同创作意图。**
+
+> 触发条件：用户请求仿写时，Step 4 之前先输出三版 prompt 供选择。
+
+### 三版定义
+
+| 版本 | 策略 | 适用场景 |
+|---|---|---|
+| **🟢 保守版（Safe）** | 最高可信度 tags，Wikipedia/Essentia 强共识词 | 想要最贴近原曲，首次尝试 |
+| **🎯 推荐版（Recommended）** | 平衡精准度与创意，本 skill 的默认输出 | 通常最佳，日常使用 |
+| **🔥 实验版（Experimental）** | 加入推断性描述词、小众风格细化词，探索边界 | 想要惊喜/有差异化 |
+
+### 生成规则
+
+从 JSON 中提取以下字段作为输入：
+```
+essentia_features.key_extractor       → key/scale/strength
+essentia_features.bpm                 → tempo精确值
+essentia_features.lufs_integrated     → 响度/动态感
+essentia_features.chord_histogram     → 和声色彩
+essentia_features.danceability        → 节奏驱动感
+spotify_like_features.valence         → 情绪极性
+spotify_like_features.energy          → 能量水平
+spotify_like_features.acousticness    → 声学/电子比例
+production_style.likely_genres        → 流派基础
+suno_prompt.style_tags                → 脚本基础 tags
+```
+
+**保守版**：仅保留 genre(1个) + key mood(1个) + tempo描述(1个) + 最高占比和弦的色彩(1个) = ≤60字符
+**推荐版**：genre(1-2个) + mood(1-2个) + instrument特色(1个) + dynamics(1个) = ≤120字符（链路B）/ ≤180字符（链路A）
+**实验版**：推荐版基础上，参考 `suno_tag_library.yaml` 的 `power_combos` 或 `cinematic_special` 区域追加2-3个高级词 = ≤120字符
+
+### 输出格式
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎚️ Step 3c — 三版 Suno Prompt 预览
+   （基于 Essentia + Spotify-like 特征 v6）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 核心特征摘要：
+   BPM: [essentia_bpm] | Key: [key] [scale] (strength=[strength])
+   Valence: [valence] | Energy: [energy] | Danceability: [dance]
+   LUFS: [lufs] dB | Top chords: [chord_histogram top3]
+
+🟢 保守版（Safe）｜字符数: XX
+   "[style prompt]"
+   → 推荐人群：想稳定复现原曲风格
+
+🎯 推荐版（Recommended）｜字符数: XX  ← 默认用这个
+   "[style prompt]"
+   → 推荐人群：日常仿写，平衡精准与创意
+
+🔥 实验版（Experimental）｜字符数: XX
+   "[style prompt]"
+   → 推荐人群：想要惊喜效果，可能偏离原曲但有趣
+
+💡 如无特殊需求，Step 4 默认使用 🎯 推荐版。
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+## Step 3d — 相似度预估（P2 v6 新增）
+
+**用 Essentia 提供的精确数值，给出"仿写目标的可达性评估"。**
+
+> 目的：让用户知道 Suno 生成结果与原曲的理论接近程度，并提示哪些维度是瓶颈。
+
+### 评估维度（5维）
+
+从 `essentia_features` + `spotify_like_features` 提取：
+
+| 维度 | 使用字段 | 说明 |
+|---|---|---|
+| **节奏契合度** | `bpm` ± 2 BPM = 满分 | Suno 对 BPM 控制较精准 |
+| **调性契合度** | `key_extractor.strength` | strength > 0.8 = 调性清晰，Suno 易复现 |
+| **和声复杂度** | `chord_histogram` 和弦种类数 | ≤4种 = 简单易复现；≥7种 = 复杂 |
+| **动态可达性** | `lufs_integrated` | -14 至 -9 LUFS = Suno 最擅长的响度区间 |
+| **流派清晰度** | `genre_scores` 最高得分 vs 第二名的差距 | 差距 > 20分 = 流派清晰；< 10分 = 模糊 |
+
+### 评分规则
+
+```
+节奏契合度:
+  BPM 50-180 → ★★★★★（Suno 支持范围）
+  BPM > 180 或 < 50 → ★★★（Suno 表现不稳定）
+
+调性契合度:
+  key_strength > 0.85 → ★★★★★
+  0.70-0.85 → ★★★★
+  < 0.70 → ★★★（调性模糊，Suno 可能偏移）
+
+和声复杂度:
+  chord种类 ≤ 3 → ★★★★★（Suno 擅长简单进行）
+  4-5种 → ★★★★
+  ≥ 6种 → ★★★（复杂进行 Suno 难以精确复现）
+
+动态可达性:
+  LUFS -14 至 -9 → ★★★★★
+  -18 至 -14 → ★★★★
+  > -9（过响）→ ★★★
+  < -18（过安静）→ ★★★
+
+流派清晰度:
+  genre_scores 第一名 - 第二名 > 20 → ★★★★★
+  10-20分差距 → ★★★★
+  < 10分差距 → ★★★（风格边缘化）
+```
+
+### 输出格式
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📐 Step 3d — Suno 仿写相似度预估
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+节奏契合度   [★★★★★] BPM=[X], Suno支持范围内
+调性契合度   [★★★★☆] Key=[X] [scale], strength=[X]（0.8以上清晰）
+和声复杂度   [★★★☆☆] [N]种和弦（越少Suno越精准）
+动态可达性   [★★★★★] LUFS=[X] dB，在Suno最佳区间内
+流派清晰度   [★★★★☆] 主流派领先[X]分（差距越大越清晰）
+
+综合评估：⭐ X.X / 5.0
+预期效果：[高度还原 / 风格相近 / 神韵相似 / 较大偏差]
+
+⚠️ 仿写难点：[列出最低分维度的具体建议]
+   例："和声进行较复杂（7种和弦），建议 prompt 中加入 'complex chord progressions'
+        引导 Suno 在和声上下功夫"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
 ## Step 4 — Original Song Creation（仿作新歌）
 
 **基于综合分析，先判断原曲类型，走不同的创作链路。**
@@ -514,9 +649,9 @@ Suno 有两个独立输入框，字符限制不同，**必须分开输出**：
 
 | 维度 | 精度 | 说明 |
 |---|---|---|
-| BPM | ★★★★ | ±1 BPM，拍号建议耳听确认 |
-| 调性/调式 | ★★★ | KS统计算法，转调歌曲偏差较大 |
-| 和弦 | ★★★ | 仅三和弦，无七和弦/延伸音 |
+| BPM | ★★★★★ | **v6 Essentia RhythmExtractor2013**，EBU 标准，109.94 vs librosa 112.3 |
+| 调性/调式 | ★★★★★ | **v6 Essentia KeyExtractor**，strength 0.9+，远超 librosa KS算法（0.677→0.914）|
+| 和弦 | ★★★★ | **v6 ChordsDetection+HPCP**，含七和弦，输出占比 histogram（Dm 44%等）|
 | Bassline | ★★★★ | pyin tracking，前90秒有效 |
 | 鼓组 | ★★★ | 频段分离法，前8小节有效 |
 | 歌词识别 | ★★★ | faster-whisper small，英语优；重混音时准确率下降 |
@@ -532,6 +667,17 @@ Suno 有两个独立输入框，字符限制不同，**必须分开输出**：
 
 ```bash
 pip install librosa soundfile scipy faster-whisper
+pip install essentia  # v6 主引擎（精度提升，可选但强烈推荐）
+# 若 essentia 安装失败，skill 自动 fallback 到 librosa-only 模式
 # ffprobe 已预装（ffmpeg 套件）
 # 首次运行whisper会下载small模型（~245MB），缓存于 /tmp/whisper_models
 ```
+
+## v6 新增文件
+
+| 文件 | 说明 |
+|---|---|
+| `scripts/analyze_audio.py` | 主分析脚本（双引擎，1266行）|
+| `suno_tag_library.yaml` | 393个验证 Suno style tags，7分类，15个 power combo |
+| `suno_structure_templates.yaml` | 7个曲式结构模板，13条自动选择规则 |
+| `suno_lyric_scaffolds.md` | 3套歌词骨架模板（含占位符注释）|
