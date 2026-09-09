@@ -106,9 +106,14 @@ Before generating, get a 5-star prediction across:
 
 | File | Description |
 |---|---|
-| `scripts/analyze_audio.py` | Main analysis script (dual-engine, 1266 lines) |
-| `SKILL.md` | Full pipeline instructions for Claude |
-| `suno_tag_library.yaml` | 393 validated Suno style tags, 7 categories, feature→tag mapping rules |
+| `scripts/analyze_audio.py` | Main analysis script (dual-engine + Whisper hallucination gating, 1270 lines) |
+| `scripts/identify_song.py` | Multi-channel song identity detection, LRClib synced lyrics query, Lyric Normalizer & Instrumental Timeline Scaffolding |
+| `scripts/compile_prompt.py` | Prompt Compiler generating 3-version Style Prompts (150–350 chars) + Orthogonal Negative Prompts (≤200 chars) |
+| `scripts/parse_midi.py` | MIDI parser extracting modes, syncopated bass, and whitelisted Suno theory tags |
+| `artist_feature_map.yaml` | Positive artist deconstruction dictionary bypassing Suno's artist name filter |
+| `auto_exclusion_map.yaml` | Orthogonal negative prompts and universal anti-artifact rules |
+| `SKILL.md` | Full pipeline instructions for Claude (v7.2 dual-branch workflow) |
+| `suno_tag_library.yaml` | 400+ validated Suno style tags, 8 categories (including theory whitelist), 15 power combos |
 | `suno_structure_templates.yaml` | 7 song form templates, 18 annotated structure tags, 13 auto-selection rules |
 | `suno_lyric_scaffolds.md` | 3 complete lyric scaffold templates with placeholder annotations |
 
@@ -144,27 +149,33 @@ Place the skill folder under your OpenClaw skills directory:
 
 ## Usage
 
-### Basic
-
+### 1. Basic Audio Feature Extraction
 ```bash
-python3 ~/.openclaw/skills/audio-analyzer/scripts/analyze_audio.py <file_path>
+python3 scripts/analyze_audio.py <file_path>
 ```
+Output: JSON with all audio features including `essentia_features`, `spotify_like_features`, `chord_histogram`, and `analysis_engine` fields. Automatically engages Whisper hallucination gate if `instrumentalness >= 0.7`.
 
-Output: JSON with all audio features including `essentia_features`, `spotify_like_features`, `chord_histogram`, and `analysis_engine` fields.
-
-### With Song Name (enables web knowledge fusion)
-
+### 2. Multi-Channel Identity & Lyric Structuring
 ```bash
-# Rename file to song name before analysis
-mv recording.mp3 "The Weeknd - Blinding Lights.mp3"
-python3 analyze_audio.py "The Weeknd - Blinding Lights.mp3"
+python3 scripts/identify_song.py <file_path> analysis.json
 ```
+Output: Matches track via LRClib / AcoustID, normalizes lyrics with Suno metatags, or outputs an Instrumental Timeline Arrangement Scaffolding.
 
-Claude will auto-detect the title and fetch Wikipedia + reviews for style fusion.
+### 3. Prompt Compiler
+```bash
+python3 scripts/compile_prompt.py analysis.json [optional_artist_name]
+```
+Output: Generates 3-version Style Prompts (Safe / Recommended / Experimental) within 150–350 chars alongside orthogonal Negative Prompts (≤200 chars).
+
+### 4. Optional MIDI Theory Analysis
+```bash
+python3 scripts/parse_midi.py <midi_file_path>
+```
+Output: Extracts scale modes, rhythm syncopation, and Suno-perceptible whitelisted theory tags.
 
 ---
 
-## Output JSON Structure (v6)
+## Output JSON Structure (v7.2)
 
 ```json
 {
