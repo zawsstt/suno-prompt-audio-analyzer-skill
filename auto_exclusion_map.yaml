@@ -1,8 +1,8 @@
-# Suno AI Auto-Exclusion Map (负向 Prompt 自动排除规则库) v1.0
+# Suno AI Auto-Exclusion Map v1.0
 # Purpose: Generate targeted exclusion tags for Suno "Exclude Styles / Negative Prompt" (<= 200 chars).
 # Core Rule: Cross-dimensional orthogonal exclusion ONLY. NEVER exclude the same instrument root as positive tags.
 
-# 通用防瑕疵词（任何流派必带，Suno 提示词的通用杀手锏）
+# Generic anti-artifact tags (universal across all genres)
 generic_quality_exclusions:
   tags:
     - "muddy mix"
@@ -14,7 +14,7 @@ generic_quality_exclusions:
     - "amateur mix"
   default_string: "muddy mix, low quality, harsh distortion, clipping, muffled vocals"
 
-# 流派正交互斥库（仅跨维度互斥，绝不包含细分乐器冲突）
+# Orthogonal genre conflict exclusions (broad style divergence only)
 genre_conflict_exclusions:
   lo-fi:
     exclude: ["EDM", "heavy metal", "harsh synth", "autotune", "stadium rock", "punchy modern club beat"]

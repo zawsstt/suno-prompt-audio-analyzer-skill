@@ -1,6 +1,6 @@
 ---
 name: audio-analyzer
-description: "Audio analysis + lyrics transcription + LLM music producer synthesis + original song creation for Suno AI. Analyzes audio files (MP3/WAV/FLAC/AAC/OGG/M4A) returning key/mode/chords/bassline/drums/EQ/LUFS/BPM/melody/structure, auto vocal transcription with chorus detection, deep producer-perspective synthesis integrating audio features and lyric themes, then creates a brand-new original song (title + full lyrics + Suno style prompt ≤200 chars) imitating the reference track's style and production DNA. Keywords: 分析音频, suno prompt, 歌词识别, 仿写歌曲, 创作歌词, 模仿创作, 编曲参考, BPM, 和弦进行, 调性, bassline, audio analysis, lyrics transcription, imitation composition, original song creation."
+description: "Audio analysis + lyrics transcription + LLM music producer synthesis + original song creation for Suno AI. Analyzes audio files (MP3/WAV/FLAC/AAC/OGG/M4A) returning key/mode/chords/bassline/drums/EQ/LUFS/BPM/melody/structure, auto vocal transcription with chorus detection, deep producer-perspective synthesis integrating audio features and lyric themes, then creates a brand-new original song (title + full lyrics + Suno style prompt ≤200 chars) imitating the reference track's style and production DNA. Keywords: audio analysis, suno prompt, lyrics transcription, song imitation, lyric creation, producer reference, BPM, chord progression, key, bassline, audio reverse engineering, music theory."
 version: "7.2"
 changelog: "v7.2 — Production-ready release: 1. Dual-branch architecture (Vocal vs Instrumental) with zero-dependency Whisper hallucination gating (instrumentalness >= 0.7 skips Whisper). 2. Three-channel parallel song identity detection (Whisper chorus line search + AcoustID + filename fallback) + LRClib synced lyrics integration. 3. Lyric Normalizer (breath-point comma formatting, bar-aligned phrasing, Metatag structuring). 4. Instrumental Timeline Arrangement Scaffolding (dynamic section cues in Lyrics box for instrumental tracks). 5. Suno-perceptible theory tag whitelist (dorian mode, 2-5-1, syncopated bass). 6. Artist feature deconstruction (artist_feature_map.yaml) converting banned artist names into rich stylistic descriptors. 7. Auto-exclusion generator (auto_exclusion_map.yaml) for orthogonal negative prompts (<=200 chars). 8. MIDI analysis engine (scripts/parse_midi.py) and prompt compiler (scripts/compile_prompt.py)."
 ---
@@ -53,148 +53,43 @@ Step 4: Structured Delivery
 ④ (Optional) sketch.mid                 ④ (Optional) sketch.mid
 ```
 
-Steps 1 is script-driven. **Steps 0, 1b, 3–4 are Claude's work** — web knowledge fusion is the v5 core upgrade.
-
 ---
 
 ## Step 0 & Step 1 — Multi-Channel Identification & Audio Analysis
 
-### 1. 运行核心分析脚本
+### 1. Run Core Analysis Script
 ```bash
 python scripts/analyze_audio.py <file_path> > analysis.json
 ```
-- **Whisper 幻觉门禁（v7.2 新增）**：当 Essentia 检测到 `instrumentalness >= 0.7` 时，脚本物理关闭 Whisper 通道，零成本杜绝器乐段落引起的重复循环文本幻觉。
+- **Whisper Hallucination Gate**: When Essentia detects `instrumentalness >= 0.7`, the script automatically bypasses Whisper transcription, eliminating text looping hallucinations over instrumental or solo passages.
 
-### 2. 身份确认与歌词结构化
+### 2. Identify Song & Format Lyrics
 ```bash
 python scripts/identify_song.py <file_path> analysis.json
 ```
-- **三通道并行识别**：歌词候选句匹配（LRClib 同步歌词） + 音频指纹（AcoustID） + 文件名兜底。
-- **人声分支**：自动拉取歌词并经过 **Lyric Normalizer** 处理（全半角统一、逗号换气清洗、小节换行），输出带 `[Intro] [Verse] [Chorus] [Outro]` 的规范 Metatag 歌词。
-- **器乐分支**：自动生成 **Instrumental Timeline Scaffolding**（时间线编排脚手架），填入 Suno Lyrics 框精准控制各段落起伏。
+- **Tri-channel Parallel Matching**: Lyric hook search (LRClib synced lyrics) + Audio fingerprinting (AcoustID) + Filename fallback.
+- **Vocal Branch**: Fetches lyrics and runs **Lyric Normalizer** (CJK/English punctuation normalization, breath-point commas, 1-2 bar line wrapping), outputting standardized `[Intro] [Verse] [Chorus] [Outro]` metatags.
+- **Instrumental Branch**: Automatically generates an **Instrumental Timeline Arrangement Scaffolding** for the Suno Lyrics box to direct dramatic dynamic builds and drops.
 
 ---
 
 ## Step 1b — Web Knowledge & Artist Deconstruction 🌐
 
-从 Step 1 确认的曲目与艺人信息，发起网络搜索或查阅本地艺人解构词典 (`artist_feature_map.yaml`)：
-- **合规红线**：Suno 官方禁止在 Style Prompt 中包含艺人姓名。
-- **艺人解构机制**：将检索命中的艺人转换为正向的音色、设备、乐理描述词（如 `The Weeknd` → `dark R&B, vintage 80s analog synth bass, soaring falsetto, pulsing arpeggios`）。
+From the identified track and artist, perform web search or query the local artist deconstruction dictionary (`artist_feature_map.yaml`):
+- **Compliance Filter**: Suno systematically intercepts artist names in style prompts.
+- **Deconstruction Engine**: Translates matched artists into positive, high-fidelity sound, gear, and theory descriptors (e.g. `The Weeknd` → `dark R&B, vintage 80s analog synth bass, soaring falsetto, pulsing arpeggios`).
 
 ---
 
-## Step 1e — MIDI & Music Theory Analysis (v7.2 新增)
+## Step 1e — MIDI & Music Theory Analysis
 
-若用户提供了 `.mid` 文件或执行了本地转写：
+When a `.mid` file is supplied or local transcription is performed:
 ```bash
 python scripts/parse_midi.py <midi_file_path>
 ```
-提取的理论标签严格经过 **Suno 可感知词汇白名单 (`theory_tags`)** 过滤：
-- ✅ **允许输出**：`2-5-1 jazz progression`, `four-chord pop loop`, `dorian mode`, `minor pentatonic`, `syncopated bass`, `half-time drum beat` 等。
-- ❌ **禁止输出**：`tritone substitution`, `hypodorian`, `iv6-V7` 等模型无统计先验的生僻术语。
-
----
-
-## Step 3 — Suno Prompt Compiler (Prompt 编译器)
-
-运行编译器一键生成多版本 Prompt 与正交 Negative Prompt：
-```bash
-python scripts/compile_prompt.py analysis.json "歌手名"
-```
-
-### 1. 字符预算与权重排列
-- **结构顺序**：`Genre(1-2) → Mood(1-2) → 乐理Tag(1-2) → Instruments(2-3) → Vocals(1) → Production(1-2)`，前置权重更高。
-- **目标字符数**：150–350 字符（8–12 个逗号分隔标签），防止散文导致注意力稀释。
-
-### 2. 自动生成 Negative Prompt (≤200 字符)
-基于 `auto_exclusion_map.yaml` 自动组装：
-- **通用防瑕疵**：`muddy mix, low quality, harsh distortion, clipping, muffled vocals`
-- **正交风格互斥**：排除互斥的大流派，**严禁与正向乐器同根词取反**。
-目标：风格标签、专辑信息、制作人、影响力来源
-提取字段：
-  - genre（流派标签，Wikipedia 往往非常精准）
-  - recorded at / produced by（制作背景）
-  - influences / inspiration（影响来源）
-  - chart performance（商业定位参考）
-```
-
-#### 优先级 2：乐评 / 专辑评测
-```
-搜索词："{歌名} {歌手} review production analysis"
-         "{歌名} {歌手} 乐评 制作分析"
-目标：专业乐评人对编曲、音色、情绪的描述词
-提取字段：
-  - 对具体乐器/音色的描述（e.g., "pulsing synth bass", "slap reverb snare"）
-  - 情绪/氛围描述词（e.g., "nostalgic melancholy", "euphoric rush"）
-  - 与哪些艺人/作品风格相近的比较描述
-```
-
-#### 优先级 3：制作人信息 / 制作技巧
-```
-搜索词："{歌名} {歌手} producer interview beat breakdown"
-         "{歌手} {专辑名} production technique"
-目标：具体制作细节（synth型号、鼓机、效果器、采样来源等）
-提取字段：
-  - 使用的合成器/乐器型号（e.g., "Juno-106 synth", "Roland TR-808"）
-  - 制作手法（e.g., "pitched up vocal sample", "side-chain compression"）
-  - BPM/调性确认（可与脚本结果交叉验证）
-```
-
-#### 优先级 4：歌词解析 / 主题分析（有歌词时）
-```
-搜索词："{歌名} {歌手} lyrics meaning analysis"
-         "{歌名} {歌手} 歌词解析 主题"
-目标：歌词主题、意象系统、叙事结构
-提取字段：
-  - 核心主题/意象
-  - 歌词写作风格描述
-  - 情感弧线
-```
-
-### 检索结果整理格式
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌐 网络知识检索结果：[歌名] — [歌手]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📖 来源 1 — Wikipedia/百科
-   流派标签：[精确标签，如 "synth-pop, new wave, R&B"]
-   制作人：[姓名]
-   录制年份/专辑：[信息]
-   关键描述：[1-3句最有价值的描述]
-
-📝 来源 2 — 乐评
-   乐评来源：[网站名]
-   音色描述：[具体描述词，直接可用于 prompt]
-   情绪描述：[具体词汇]
-
-🎚️ 来源 3 — 制作信息
-   使用器材/合成器：[型号列表]
-   制作手法亮点：[简述]
-   BPM/调性确认：[与脚本结果对比]
-
-🎤 来源 4 — 歌词主题（有歌词时）
-   核心主题：[关键词]
-   写作风格：[描述]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏷️ 可用于 Suno Prompt 的高价值词汇提炼
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-从以上来源提炼出最适合 Suno Style 字段的词汇（来自人类描述，非脚本生成）：
-
-Genre: [精确流派，直接来自 Wikipedia]
-Sound descriptors: [合成器/乐器词汇，如 "Juno-106 synth", "slap reverb"]
-Mood: [精确情绪词，来自乐评]
-Production style: [制作手法词汇]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-### 搜索失败处理
-
-若搜索无结果或被封锁：
-- 直接标注"⚠️ 网络查询未获有效结果，仅使用音频分析数据"
-- 继续 Step 2，不影响后续流程
+Extracted harmony tags are strictly filtered through the **Suno-Perceptible Theory Tag Whitelist (`theory_tags`)**:
+- ✅ **Whitelisted**: `2-5-1 jazz progression`, `four-chord pop loop`, `dorian mode`, `minor pentatonic`, `syncopated bass`, `half-time drum beat`.
+- ❌ **Blacklisted**: `tritone substitution`, `hypodorian`, `iv6-V7` (academic labels with no prior distribution in Suno's training data).
 
 ---
 
@@ -208,500 +103,132 @@ Parse the JSON and present all sections clearly. Use this structure:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 BPM / Key / Time Sig / Swing / LUFS / Dynamic Range
 
-① 响度 & 动态
-RMS / LUFS / 峰值 / Crest Factor / 动态范围 / Headroom + 压缩提示
+① Loudness & Dynamics
+RMS / LUFS / Peak / Crest Factor / Dynamic Range / Headroom + Compression hints
 
-② 频段能量（EQ参考）
-7-band 条形图 + % + dB；注明低频/高频导向
+② Frequency Balance (EQ Reference)
+7-band breakdown + % + dB; bass vs treble orientation
 
-③ 节奏 & 律动
-BPM / Swing类型 / 拍号 / 前16拍时间轴
+③ Rhythm & Groove
+BPM / Swing type / Time signature / First 16 beats timeline
 
-④ 鼓组 Pattern（前8小节）
-Kick / Snare / HiHat 时间点 + 每小节密度
+④ Drum Pattern (First 8 bars)
+Kick / Snare / Hi-Hat onsets + density per bar
 
-⑤ Bassline 音符序列
-最常出现低音根音表格 + 开头行进序列 + MIDI建议
+⑤ Bassline Sequence
+Root note frequency table + opening progression + MIDI suggestions
 
-⑥ 和弦进行
-核心loop（带罗马数字）/ 全曲和弦 / 最高频跳转 / 色彩变化点
+⑥ Chord Progressions
+Core loop (with Roman numerals) / Full track chords / Harmonic transitions
 
-⑦ 调性 & 音阶
-主调 / 调式色彩（Phrygian/Dorian/etc.）/ 相对调 / 色度能量分布
+⑦ Tonality & Scale
+Primary key / Modal flavor (Phrygian/Dorian/etc.) / Relative key / Chroma energy
 
-⑧ 调性时间轴（每15秒）
-时间段 → 调性 / 置信度 / 变化标记
+⑧ Tonal Timeline (Every 15s)
+Time bracket → Key / Confidence / Modulation markers
 
-⑨ 旋律轮廓
-音域范围 / 主导旋律音 / 开头走向序列
+⑨ Melodic Contour
+Pitch range / Dominant melodic notes / Opening contour sequence
 
-⑩ 能量弧度 & 段落结构
-每5秒 RMS+Flux 时间轴，高亮drop/peak
-推断段落：Intro / Verse / Build / Chorus / Breakdown / Drop / Outro
+⑩ Energy Arc & Song Structure
+RMS + Spectral Flux timeline (highlighting drops/peaks)
+Inferred sections: Intro / Verse / Build / Chorus / Breakdown / Drop / Outro
 
-⑪ 音色 & 频谱特征
-质心 / 带宽 / 滚降 / 谐波比 / 亮度描述
+⑪ Timbre & Spectral Profile
+Centroid / Bandwidth / Rolloff / Harmonic ratio / Brightness descriptors
 
-⑫ 歌词识别（Whisper）
-语言 / 人声密度 / 完整歌词时间轴
-副歌候选行（重复次数最多的行）
-歌词主题关键词
+⑫ Lyrics & Vocals
+Language / Vocal density / Full lyric timeline / Detected chorus lines / Theme keywords
 ```
 
 ---
 
-## Step 3 — LLM Music Producer Synthesis（核心环节）
+## Step 3 — Suno Prompt Compiler
 
-**在输出分析报告之后，以专业音乐制作人身份进行一次综合梳理。**
-
-### Step 3a — Web Knowledge + Audio Data Fusion（知识融合 & 风格标签精修）🌐 v5 核心
-
-**v5 新增：将 Step 1b 的网络检索结果与脚本音频数据三角互证，生成最终 Suno Style Prompt。**
-
-#### 融合优先级规则
-
-```
-优先级 1（最高）：Wikipedia / 百科的 genre 标签
-  → 这是人类音乐学家定义的精确流派，直接采用，不被脚本结果覆盖
-  → 例：Wikipedia 写 "synth-pop, new wave" → prompt 直接用这两个词
-
-优先级 2：乐评中的音色/质感描述词
-  → 这些是脚本完全无法检测的维度（合成器型号、效果器风格）
-  → 例：乐评写 "warm Juno-106 pad" → 直接加入 prompt
-  → 例：乐评写 "slap-back echo reverb" → 加入 prompt
-
-优先级 3：制作人访谈中的器材/技法信息
-  → 具体到"用了 TR-808 鼓机"这类信息对 Suno 命中率极高
-  → 例："Roland TR-808 drums" / "sampled from soul vinyl"
-
-优先级 4：脚本音频分析数据（用于校验或填补空缺）
-  → 当网络信息不足时，用脚本数据补充
-  → 用于确认/纠正：BPM、调性、能量结构
-  → 不直接覆盖优先级 1-3 的标签
-```
-
-#### 三角互证校验
-
-```
-1. BPM 交叉验证：
-   脚本测出的 BPM vs 制作人/Wikipedia 说的 BPM
-   若相差 >5，以制作人说法为准（可能是半速测量问题）
-
-2. 流派交叉验证：
-   脚本 genre_scores 第一名 vs Wikipedia genre
-   若不一致 → 以 Wikipedia 为准，检查脚本评分是否有哪个维度误判
-
-3. 情绪词交叉验证：
-   脚本 modal_flavor 推断的情绪 vs 乐评情绪描述词
-   若一致 → 保留脚本词；若不一致 → 以乐评词为准（人耳>算法）
-
-4. Bass/鼓型验证：
-   脚本 drum pattern + 制作人"用了 TR-808"
-   结合两者输出最精确的鼓型标签
-```
-
-#### 最终 Suno Style Prompt 生成
-
-```
-融合后的 Prompt 结构（按信息来源标注）：
-
-[Wikipedia Genre] + [乐评音色词] + [脚本 mood] + [制作技法词] + [脚本节奏/结构词]
-
-示例：
-原曲：The Weeknd - Blinding Lights
-Wikipedia genre: "synth-pop, new wave, R&B"
-乐评音色: "pulsing synth arpeggios", "gated reverb drums"
-脚本推断: modal_flavor=Aeolian, BPM=171, four-on-the-floor kick
-
-融合 prompt: "synth-pop, new wave, pulsing synth arpeggios, gated reverb drums, melancholic, driving, four-on-the-floor"
-字符数：91/120 ✅
-```
-
-**输出格式：**
-```
-🔧 风格标签融合校正：
-   脚本原始：[rule_based_prompt]
-   网络补充词：[来自 Wikipedia/乐评/制作人的关键词]
-   融合后（最终版）：[final prompt]
-   数据来源说明：[哪些词来自哪个来源]
-```
-
-#### 仅有音频数据时的校正（无网络结果）
-
-```
-1. 查看 genre_scores_top5：得分最高的是否合理？
-2. 验证 mood：centroid+crest+harmonic_ratio 三角验证
-3. 验证 bass 标签：808 仅限 hip-hop 语境；DnB sub ≠ 808
-4. 验证 drum 标签：trap hi-hats 仅限 hihat≥4 AND hip-hop 语境
-5. 补充人耳推断词：Rhodes / analog synth / vocal chops / distorted guitar 等
-```
-
-输出：`✅ 仅用音频数据，校正完毕` 或 `🔧 修改说明：[改了什么、为什么]`
-
----
-
-### Step 3b — 综合分析总结
-
-### Role Setting
-> 你现在是一位拥有20年经验的专业音乐制作人和词曲作者，精通电子音乐、流行音乐制作，曾参与多张商业专辑。你刚刚完成了对这首参考曲目的全面技术分析和资料查阅，现在需要综合音频数据与人类音乐知识做一次深度总结，为创作一首风格相仿的新歌曲做准备。
-
-### Synthesis Output — Present this section after the analysis report:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎼 制作人视角：综合分析总结
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【整体定位】
-用1-2句话定性这首歌：风格流派（结合网络资料修正）、目标听众、情绪定位、场景
-如有网络来源：注明"来源：Wikipedia / [乐评网站名]"
-
-【音乐DNA提炼】
-- 和声骨架：核心进行的调式特征，色彩变化规律
-- 节奏性格：律动感、鼓型特征、groove核心（如有器材信息则注明：如"TR-808驱动"）
-- 声场设计：低频策略、空间感、动态处理风格（如乐评有描述则直接引用）
-- 制作手法：最显著的3个制作特征（优先用网络资料确认的信息）
-
-【歌词主题分析】
-- 核心意象/关键词（Whisper识别 + 网络歌词分析交叉验证）
-- 情感基调
-- 歌词结构特点（信息密度、重复规律、叙事方式）
-- 副歌核心句
-
-【氛围情绪图谱】
-用3-5个关键词描述（优先使用乐评中出现过的原话，用""引用）
-
-【仿作创作方向】
-新歌应该继承的要素：
-- 保留：[具体列出，标注哪些来自网络信息、哪些来自脚本分析]
-- 变化：[主题/意象/情绪可以做哪些差异化]
-```
-
----
-
-## Step 3c — 多版本 Suno Prompt 输出（P1 v6 新增）
-
-**基于 v6 的 `essentia_features` + `spotify_like_features`，为同一首曲生成三套 Suno Style Prompt，覆盖不同创作意图。**
-
-> 触发条件：用户请求仿写时，Step 4 之前先输出三版 prompt 供选择。
-
-### 三版定义
-
-| 版本 | 策略 | 适用场景 |
-|---|---|---|
-| **🟢 保守版（Safe）** | 最高可信度 tags，Wikipedia/Essentia 强共识词 | 想要最贴近原曲，首次尝试 |
-| **🎯 推荐版（Recommended）** | 平衡精准度与创意，本 skill 的默认输出 | 通常最佳，日常使用 |
-| **🔥 实验版（Experimental）** | 加入推断性描述词、小众风格细化词，探索边界 | 想要惊喜/有差异化 |
-
-### 生成规则
-
-从 JSON 中提取以下字段作为输入：
-```
-essentia_features.key_extractor       → key/scale/strength
-essentia_features.bpm                 → tempo精确值
-essentia_features.lufs_integrated     → 响度/动态感
-essentia_features.chord_histogram     → 和声色彩
-essentia_features.danceability        → 节奏驱动感
-spotify_like_features.valence         → 情绪极性
-spotify_like_features.energy          → 能量水平
-spotify_like_features.acousticness    → 声学/电子比例
-production_style.likely_genres        → 流派基础
-suno_prompt.style_tags                → 脚本基础 tags
-```
-
-**保守版**：仅保留 genre(1个) + key mood(1个) + tempo描述(1个) + 最高占比和弦的色彩(1个) = ≤60字符
-**推荐版**：genre(1-2个) + mood(1-2个) + instrument特色(1个) + dynamics(1个) = ≤120字符（链路B）/ ≤180字符（链路A）
-**实验版**：推荐版基础上，参考 `suno_tag_library.yaml` 的 `power_combos` 或 `cinematic_special` 区域追加2-3个高级词 = ≤120字符
-
-### 输出格式
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎚️ Step 3c — 三版 Suno Prompt 预览
-   （基于 Essentia + Spotify-like 特征 v6）
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 核心特征摘要：
-   BPM: [essentia_bpm] | Key: [key] [scale] (strength=[strength])
-   Valence: [valence] | Energy: [energy] | Danceability: [dance]
-   LUFS: [lufs] dB | Top chords: [chord_histogram top3]
-
-🟢 保守版（Safe）｜字符数: XX
-   "[style prompt]"
-   → 推荐人群：想稳定复现原曲风格
-
-🎯 推荐版（Recommended）｜字符数: XX  ← 默认用这个
-   "[style prompt]"
-   → 推荐人群：日常仿写，平衡精准与创意
-
-🔥 实验版（Experimental）｜字符数: XX
-   "[style prompt]"
-   → 推荐人群：想要惊喜效果，可能偏离原曲但有趣
-
-💡 如无特殊需求，Step 4 默认使用 🎯 推荐版。
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-## Step 3d — 相似度预估（P2 v6 新增）
-
-**用 Essentia 提供的精确数值，给出"仿写目标的可达性评估"。**
-
-> 目的：让用户知道 Suno 生成结果与原曲的理论接近程度，并提示哪些维度是瓶颈。
-
-### 评估维度（5维）
-
-从 `essentia_features` + `spotify_like_features` 提取：
-
-| 维度 | 使用字段 | 说明 |
-|---|---|---|
-| **节奏契合度** | `bpm` ± 2 BPM = 满分 | Suno 对 BPM 控制较精准 |
-| **调性契合度** | `key_extractor.strength` | strength > 0.8 = 调性清晰，Suno 易复现 |
-| **和声复杂度** | `chord_histogram` 和弦种类数 | ≤4种 = 简单易复现；≥7种 = 复杂 |
-| **动态可达性** | `lufs_integrated` | -14 至 -9 LUFS = Suno 最擅长的响度区间 |
-| **流派清晰度** | `genre_scores` 最高得分 vs 第二名的差距 | 差距 > 20分 = 流派清晰；< 10分 = 模糊 |
-
-### 评分规则
-
-```
-节奏契合度:
-  BPM 50-180 → ★★★★★（Suno 支持范围）
-  BPM > 180 或 < 50 → ★★★（Suno 表现不稳定）
-
-调性契合度:
-  key_strength > 0.85 → ★★★★★
-  0.70-0.85 → ★★★★
-  < 0.70 → ★★★（调性模糊，Suno 可能偏移）
-
-和声复杂度:
-  chord种类 ≤ 3 → ★★★★★（Suno 擅长简单进行）
-  4-5种 → ★★★★
-  ≥ 6种 → ★★★（复杂进行 Suno 难以精确复现）
-
-动态可达性:
-  LUFS -14 至 -9 → ★★★★★
-  -18 至 -14 → ★★★★
-  > -9（过响）→ ★★★
-  < -18（过安静）→ ★★★
-
-流派清晰度:
-  genre_scores 第一名 - 第二名 > 20 → ★★★★★
-  10-20分差距 → ★★★★
-  < 10分差距 → ★★★（风格边缘化）
-```
-
-### 输出格式
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📐 Step 3d — Suno 仿写相似度预估
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-节奏契合度   [★★★★★] BPM=[X], Suno支持范围内
-调性契合度   [★★★★☆] Key=[X] [scale], strength=[X]（0.8以上清晰）
-和声复杂度   [★★★☆☆] [N]种和弦（越少Suno越精准）
-动态可达性   [★★★★★] LUFS=[X] dB，在Suno最佳区间内
-流派清晰度   [★★★★☆] 主流派领先[X]分（差距越大越清晰）
-
-综合评估：⭐ X.X / 5.0
-预期效果：[高度还原 / 风格相近 / 神韵相似 / 较大偏差]
-
-⚠️ 仿写难点：[列出最低分维度的具体建议]
-   例："和声进行较复杂（7种和弦），建议 prompt 中加入 'complex chord progressions'
-        引导 Suno 在和声上下功夫"
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-## Step 4 — Original Song Creation（仿作新歌）
-
-**基于综合分析，先判断原曲类型，走不同的创作链路。**
-
----
-
-### 🔀 类型判断
-
-| 条件 | 类型 | 创作链路 |
-|---|---|---|
-| `lyrics.has_lyrics == false` 或 `lyrics.has_lyrics` 不存在 | **纯音乐** | → 链路 A |
-| `lyrics.has_lyrics == true` | **有歌词音乐** | → 链路 B |
-
----
-
-### 链路 A — 纯音乐（Instrumental）
-
-只需输出一个 Suno Style Prompt（≤200字符），不创作歌词。
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎵 仿作创作（纯音乐）
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📌 参考曲风格定位：
-   [制作人视角1句话总结]
-
-🎚️ Suno Style Prompt（≤200字符，直接粘贴）：
-   [style prompt]
-   字符数：XX/200
-
-微调建议：
-   [2-3条可选追加词，如：更暗沉/更空灵/更激进]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-### 链路 B — 有歌词音乐
-
-Suno 有两个独立输入框，字符限制不同，**必须分开输出**：
-
-| 字段 | 限制 | 内容 |
-|---|---|---|
-| **Lyrics（歌词）** | ≤ 3000 字符 | 完整歌词，含 Suno 段落标签 |
-| **Style of Music（风格）** | ≤ **120 字符** | 纯风格描述词，不含歌词内容 |
-
-#### 创作原则
-
-**核心：仿原曲歌词的"模子"，不套通用模板。**
-
-在写新词之前，必须先从 `lyrics.timeline` 和 `lyrics.full_text_preview` 中提炼出原曲的歌词"模子"：
-
-| 维度 | 需要观察的内容 |
-|---|---|
-| **行长节奏** | 每行音节数，短句/长句的混合规律 |
-| **断句方式** | 句子是否跨行断开？有无故意留白的单行？|
-| **押韵方案** | AABB / ABAB / 隔行押 / 不规则押？韵脚在哪个位置？|
-| **用词语气** | 口语化（Yeah/Ain't/just）/ 正式 / AAVE / 诗意？|
-| **意象风格** | 具体画面（"grip" "bottles"）还是抽象概念？|
-| **段落结构** | 原曲实际有几个段落？Rap Bridge 有无？长短如何？|
-| **叙事口吻** | 第一人称直诉？对话？内心独白？|
-
-**提炼完"模子"后，按以下规则写新词：**
-1. **行长和断句方式跟着原曲走**，不是跟着通用Suno模板走
-2. **段落数量和顺序仿原曲**，原曲有Rap Bridge就写Rap Bridge，没有就不硬加
-3. **用词语气和意象密度仿原曲**，原曲直白就直白，原曲隐晦就隐晦
-4. **主题/意象/歌名完全原创**，内容不重复原曲，但"感觉"要像出自同一位词人
-5. **Suno 段落标签**仅使用原曲出现过的结构，不硬套固定模板
-6. **严禁自行添加原曲没有的段落**——原曲以副歌反复淡出结尾就不加 [Outro]，原曲无 [Breakdown] 就不写 [Breakdown]，以此类推
-7. **结尾方式完全跟原曲**——原曲副歌收尾就副歌收尾，原曲单行收尾就单行收尾，不自作主张加"极简三行"或任何补充段落
-6. **Style 字段严格≤120字符**，超限必须删减
-
-#### Output Format
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎵 仿作新歌创作
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📌 歌名：[原创歌名]
-   概念：[一句话说明主题]
-
-🎭 歌词"模子"提炼：
-   行长：[X-X音节，短句为主/混合/长句为主]
-   断句：[是否有跨行断句/刻意留白单行？]
-   押韵：[押韵方案描述]
-   语气：[口语/正式/AAVE/诗意？代表词汇举例]
-   意象：[具体画面/抽象概念，举例]
-   结构：[原曲实际段落顺序]
-
-🎭 创作说明：
-   [继承了哪些核心元素 / 在哪些维度做了差异化]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📝 INPUT 1 — Lyrics 字段（≤3000字符，直接粘贴）
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[按原曲实际结构创作，段落标签仿原曲，不套固定模板]
-
-字符数：XXXX/3000
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎚️ INPUT 2 — Style of Music 字段（≤120字符，直接粘贴）
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[style prompt，严格≤120字符，只含风格/情绪/乐器描述词]
-字符数：XX/120
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 使用说明
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Suno → Create → Custom Mode
-2. INPUT 1 歌词 → 粘贴到 Lyrics 框
-3. INPUT 2 风格 → 粘贴到 Style of Music 框
-4. Title 填入歌名，点击 Create
-
-微调建议：[2-3条]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-## Suno Prompt 自动生成规则（脚本内置 v4）
-
-脚本 `suno_prompt` 字段自动从分析数据提取基础标签，Claude 在 Step 3a 中需要校正，在 Step 4 中最终使用。
-
-### 字符限制
-
-| 链路 | 字段 | 字符限制 |
-|---|---|---|
-| A（纯音乐）| Style only | ≤ 200 字符 |
-| B（有歌词）| Style of Music | ≤ **120 字符**（严格） |
-| B（有歌词）| Lyrics | ≤ 3000 字符 |
-
-### 优先级顺序（高→低）
-
-| 优先级 | 维度 | v4 逻辑 |
-|---|---|---|
-| 1 | Genre（最多2个）| 多信号评分系统，12+流派，细分优先于通用 |
-| 2 | Mood | `modal_flavor` × Genre 联合推断（EDM 语境下 Phrygian→dark and ominous，非 brooding）|
-| 3 | Bass | Genre-aware：Hip-hop→808 bass；DnB→rolling bass；通用→heavy sub bass |
-| 4 | Drums | Pattern-aware：Trap→trap hi-hats；DnB→breakbeat drums；EDM→four-on-the-floor |
-| 5 | Tempo | BPM 细分6档（downtempo/mid-tempo/uptempo/driving/high-energy/frenetic） |
-| 6 | Structure | 能量谷底→高潮≥8dB → build and drop |
-| 7 | Lyric context | 歌词情绪 / instrumental 标签 |
-| 8 | Texture | 最后填空：atmospheric/wide dynamics/compressed |
-| ~~9~~ | ~~Language~~ | ~~链路B时删除，Lyrics已体现~~ |
-
-### 流派评分系统（v4 新增）
-
-脚本对12+流派进行多维度打分，`production_style.genre_scores` 字段记录各流派得分。**Claude 在 Step 3a 中应查看这个字段，判断规则系统是否选对了主流派。** 若得分第一的流派听感不符，应以得分第二或第三的流派为准，或结合听感手动指定。
-
----
-
-## 精度说明
-
-| 维度 | 精度 | 说明 |
-|---|---|---|
-| BPM | ★★★★★ | **v6 Essentia RhythmExtractor2013**，EBU 标准，109.94 vs librosa 112.3 |
-| 调性/调式 | ★★★★★ | **v6 Essentia KeyExtractor**，strength 0.9+，远超 librosa KS算法（0.677→0.914）|
-| 和弦 | ★★★★ | **v6 ChordsDetection+HPCP**，含七和弦，输出占比 histogram（Dm 44%等）|
-| Bassline | ★★★★ | pyin tracking，前90秒有效 |
-| 鼓组 | ★★★ | 频段分离法，前8小节有效 |
-| 歌词识别 | ★★★ | faster-whisper small，英语优；重混音时准确率下降 |
-| **流派识别** | **★★★★★** | **v5：Wikipedia genre（最权威）+ v4 多信号评分双保险** |
-| **风格标签** | **★★★★★** | **v5：Web知识融合（Wikipedia+乐评+制作人访谈）× 音频数据三角互证** |
-| LLM综合分析 | ★★★★ | Claude音乐制作人视角综合，质量取决于输入数据完整度 |
-| 仿作歌词 | ★★★★ | Claude创作，风格仿照但内容100%原创 |
-| **Suno Prompt** | **★★★★★** | **v5：人类音乐知识（Wikipedia/乐评/制作人）+ 脚本数据 + Claude 三角融合** |
-
----
-
-## 依赖安装
-
+Run the compiler to generate 3-version Style Prompts and orthogonal Negative Prompts:
 ```bash
-pip install librosa soundfile scipy faster-whisper
-pip install essentia  # v6 主引擎（精度提升，可选但强烈推荐）
-# 若 essentia 安装失败，skill 自动 fallback 到 librosa-only 模式
-# ffprobe 已预装（ffmpeg 套件）
-# 首次运行whisper会下载small模型（~245MB），缓存于 /tmp/whisper_models
+python scripts/compile_prompt.py analysis.json "Artist Name"
 ```
 
-## v6 新增文件
+### 1. Character Budget & Priority Order
+- **Tag Order**: `Genre(1-2) → Mood(1-2) → Theory Tag(1-2) → Instruments(2-3) → Vocals(1) → Production(1-2)`, placing higher-weighted tags at the beginning.
+- **Character Target**: 150–350 characters (8–12 comma-separated tags), avoiding verbose prose that dilutes model attention.
 
-| 文件 | 说明 |
-|---|---|
-| `scripts/analyze_audio.py` | 主分析脚本（双引擎，1266行）|
-| `suno_tag_library.yaml` | 393个验证 Suno style tags，7分类，15个 power combo |
-| `suno_structure_templates.yaml` | 7个曲式结构模板，13条自动选择规则 |
-| `suno_lyric_scaffolds.md` | 3套歌词骨架模板（含占位符注释）|
+### 2. Auto-Exclusion Negative Prompt (≤200 chars)
+Assembled from `auto_exclusion_map.yaml`:
+- **Generic Quality Exclusions**: `muddy mix, low quality, harsh distortion, clipping, muffled vocals`
+- **Orthogonal Style Conflicts**: Large opposing genres, strictly avoiding negation of same-root positive instruments.
+
+### 3. Multi-Version Prompts
+- **🟢 Safe**: Highest confidence tags only (genres + basic mood + tempo).
+- **🎯 Recommended**: Balanced accuracy and musical creativity (default).
+- **🔥 Experimental**: Introduces power combos and spatial descriptors.
+
+---
+
+## Step 4 — Original Song Delivery
+
+Select the delivery workflow based on the track classification:
+
+### Path A — Instrumental (Pure Music)
+
+Outputs Suno Style Prompt along with the **Instrumental Timeline Arrangement Scaffolding** for the Lyrics box:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎵 ORIGINAL SONG CREATION (INSTRUMENTAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 Reference Concept:
+   [Producer 1-sentence summary]
+
+📝 INPUT 1 — Lyrics Field (Instrumental Timeline Scaffolding):
+[Intro: Atmospheric ambient textures, subtle pulse]
+[Build-up: Rising tension, dynamic percussion enters, 128 BPM]
+[Drop: Full instrumentation, powerful rhythmic hook, deep sub-bass]
+[Verse: Stripped back arrangement, melodic solo lead over soft background chords]
+[Climax: Massive dynamic peak, triumphant full-spectrum wall of sound]
+[Outro: Slow decrescendo, lingering atmospheric tail, fade out]
+
+🎚️ INPUT 2 — Style of Music Field (≤350 chars):
+   [Recommended Style Prompt]
+
+🚫 INPUT 3 — Exclude Styles Field (≤200 chars):
+   [Negative Prompt]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Path B — Vocal Music
+
+Outputs structured lyric metatags alongside style and negative prompts:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎵 ORIGINAL SONG CREATION (VOCAL TRACK)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 Title: [Original Song Title]
+   Concept: [Thematic core statement]
+
+📝 INPUT 1 — Lyrics Field (Direct Paste with Suno Metatags):
+[Intro]
+
+[Verse 1]
+[Lyric line with breath-point commas]
+[Lyric line formatted to 1-2 musical bars]
+
+[Chorus 1]
+[Repetitive melodic hook line]
+
+[Verse 2]
+...
+
+[Outro]
+
+🎚️ INPUT 2 — Style of Music Field (≤350 chars):
+   [Recommended Style Prompt]
+
+🚫 INPUT 3 — Exclude Styles Field (≤200 chars):
+   [Negative Prompt]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```

@@ -1,4 +1,4 @@
-# Suno AI Artist Feature Map (艺人特征解构字典) v1.0
+# Suno AI Artist Feature Map v1.0
 # Purpose: Positive deconstruction of artist styles into compliant Suno descriptors.
 # Red line: Artist names must NEVER appear in final Suno prompts (compliance filter).
 
@@ -11,7 +11,7 @@ artist_mappings:
     theory: ["minor pentatonic", "Aeolian progression", "four-on-the-floor groove"]
     recommended_tags: "dark R&B, synth-pop, vintage 80s analog synth bass, soaring falsetto, pulsing arpeggios, melancholic, 170 BPM"
 
-  "周杰伦":
+  "Jay Chou":
     genres: ["mandopop", "R&B fusion", "chinese style pop"]
     production_sound: ["guzheng acoustic pluck", "lo-fi vinyl crackle", "lush string quartet", "punchy boom bap beat"]
     vocals: ["melodic rhythmic rap", "smooth emotional vocal", "nasal vocal timbre"]
