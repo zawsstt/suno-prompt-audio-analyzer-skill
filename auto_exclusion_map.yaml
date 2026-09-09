@@ -1,0 +1,45 @@
+# Suno AI Auto-Exclusion Map (负向 Prompt 自动排除规则库) v1.0
+# Purpose: Generate targeted exclusion tags for Suno "Exclude Styles / Negative Prompt" (<= 200 chars).
+# Core Rule: Cross-dimensional orthogonal exclusion ONLY. NEVER exclude the same instrument root as positive tags.
+
+# 通用防瑕疵词（任何流派必带，Suno 提示词的通用杀手锏）
+generic_quality_exclusions:
+  tags:
+    - "muddy mix"
+    - "low quality"
+    - "harsh distortion"
+    - "clipping"
+    - "muffled vocals"
+    - "noisy background"
+    - "amateur mix"
+  default_string: "muddy mix, low quality, harsh distortion, clipping, muffled vocals"
+
+# 流派正交互斥库（仅跨维度互斥，绝不包含细分乐器冲突）
+genre_conflict_exclusions:
+  lo-fi:
+    exclude: ["EDM", "heavy metal", "harsh synth", "autotune", "stadium rock", "punchy modern club beat"]
+    reason: "Lo-fi requires vintage warmth and relaxed aesthetic"
+
+  indie_folk:
+    exclude: ["EDM", "dubstep", "distorted 808s", "heavy metal riffs", "autotune", "club dance beat"]
+    reason: "Folk requires acoustic and organic instrument separation"
+
+  cinematic_orchestral:
+    exclude: ["trap drums", "autotune pop vocals", "lo-fi crackle", "scratching", "EDM build-up", "808 bass"]
+    reason: "Orchestral requires symphonic purity and dynamic headroom"
+
+  ambient:
+    exclude: ["aggressive drums", "shouted vocals", "fast tempo", "heavy guitar distortion", "breakneck"]
+    reason: "Ambient requires open space and minimal percussive impact"
+
+  jazz_neo_soul:
+    exclude: ["screaming metal vocals", "aggressive EDM synths", "distorted techno bass", "hardcore trap"]
+    reason: "Jazz/soul requires harmonic warmth and subtle swing"
+
+  acoustic_pop:
+    exclude: ["heavy industrial synths", "metallic distortion", "aggressive screams", "dubstep wobble"]
+    reason: "Acoustic pop focuses on vocal intimacy and clean guitars/pianos"
+
+  synthwave_retro:
+    exclude: ["acoustic bluegrass banjo", "heavy acoustic drums", "folk instruments", "traditional ethnic flutes"]
+    reason: "Synthwave strictly anchors to 80s analog/digital electronic gear"

@@ -847,7 +847,16 @@ def analyze(filepath):
     }
 
     # ── 18. Lyrics Analysis (faster-whisper) ──────────────────────────────────
-    result["lyrics"] = extract_lyrics(filepath)
+    # ── 18. Lyrics extraction (v7: Hallucination gate: skip if instrumentalness >= 0.7) ────────
+    temp_spotify = compute_spotify_like_features(ess_feat, librosa_data_for_spotify, final_scale)
+    if temp_spotify.get("instrumentalness", 0.0) >= 0.7:
+        result["lyrics"] = {
+            "has_lyrics": False,
+            "is_instrumental": True,
+            "note": "Instrumental track detected (instrumentalness >= 0.7) — Whisper hallucination gate engaged"
+        }
+    else:
+        result["lyrics"] = extract_lyrics(filepath)
 
     # Update Spotify features with actual lyrics data
     has_lyrics_actual  = result["lyrics"].get("has_lyrics", False)

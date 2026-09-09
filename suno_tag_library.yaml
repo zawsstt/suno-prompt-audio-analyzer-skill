@@ -713,3 +713,52 @@ genre_instrument_hints:
   reggae: ["electric guitar", "organ", "bass guitar", "off-beat rhythm"]
   funk: ["slap bass", "brass section", "wah guitar", "tight drums"]
   cinematic: ["orchestral strings", "brass", "choir", "percussion", "synth pads"]
+
+# =============================================================================
+# SUNO-PERCEPTIBLE MUSIC THEORY TAGS (v7.2 乐理可感知白名单)
+# Academic analysis tags mapped to internet-high-frequency Suno tokens
+# =============================================================================
+theory_tags:
+  progressions:
+    - tag: "2-5-1 jazz progression"
+      trigger: ["ii-V-I", "ii7-V7-Imaj7"]
+      note: "Standard jazz and neo-soul cadence"
+    - tag: "four-chord pop loop"
+      trigger: ["i-VI-III-VII", "I-V-vi-IV", "vi-IV-I-V"]
+      note: "Most common radio pop / ballad loop"
+    - tag: "andalusian cadence"
+      trigger: ["i-VII-VI-V", "iv6-V7"]
+      note: "Flamenco, acoustic rock, emotional tension"
+    - tag: "blues progression"
+      trigger: ["I-IV-V blues", "12-bar blues"]
+      note: "Classic blues, funk, rock"
+
+  modes_and_scales:
+    - tag: "dorian mode"
+      trigger: ["Dorian", "minor with natural 6th"]
+      note: "Warm minor, funk, jazz fusion"
+    - tag: "mixolydian groove"
+      trigger: ["Mixolydian", "major with flat 7th"]
+      note: "Blues rock, southern rock, jam band"
+    - tag: "minor pentatonic"
+      trigger: ["pentatonic minor", "blues scale"]
+      note: "Rock, trap melodies, soul hooks"
+    - tag: "major pentatonic"
+      trigger: ["pentatonic major"]
+      note: "Mandopop, country, folk"
+    - tag: "phrygian tension"
+      trigger: ["Phrygian", "minor with flat 2nd"]
+      note: "Dark electronic, trap, metal"
+
+  rhythm_and_groove:
+    - tag: "syncopated bass"
+      trigger: ["syncopation > 0.4"]
+    - tag: "half-time drum beat"
+      trigger: ["half-time", "downtempo trap"]
+    - tag: "straight 16ths"
+      trigger: ["16th notes", "motorik beat"]
+    - tag: "swung 8ths"
+      trigger: ["swing ratio > 1.2"]
+    - tag: "polyrhythm 3:4"
+      trigger: ["metric modulation", "polyrhythm"]
+

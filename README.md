@@ -2,27 +2,39 @@
 
 Audio analysis + lyrics transcription + web knowledge fusion + LLM music producer synthesis + original song creation for Suno AI
 
-**Current version: v6.0**
+**Current version: v7.2**
 
 ---
 
 ## What It Does
 
-Full pipeline for high-fidelity Suno music generation:
+Full pipeline for high-fidelity Suno music generation & production reverse-engineering:
 
-1. **Song Identity Detection** — Auto-extract song name & artist from filename
-2. **Dual-Engine Audio Analysis** *(v6 new)* — Essentia (primary) + Librosa (secondary) for production-grade precision
-3. **Web Knowledge Retrieval** — Fetch Wikipedia genre labels, music reviews, producer interviews, and lyrics analysis
-4. **Lyrics Transcription** — Auto vocal transcription via Whisper with chorus detection
-5. **Knowledge Fusion & Style Tag Validation** — Three-way triangulation: web knowledge × audio data × Claude judgment
-6. **Multi-Version Suno Prompt** *(v6 new)* — 3 prompt variants: Safe / Recommended / Experimental
-7. **Similarity Estimation** *(v6 new)* — 5-dimension score predicting how well Suno can replicate the source track
-8. **Music Producer Synthesis** — Deep LLM analysis from a producer's perspective
-9. **Original Song Creation** — Brand-new title + full lyrics + Suno style prompt imitating the reference track's DNA
+1. **Dual-Branch Architecture & Hallucination Gate** *(v7.2 new)* — Zero-dependency gating using `instrumentalness >= 0.7` to cut off Whisper and eliminate instrumental looping text hallucinations.
+2. **Multi-Channel Song Identity Detection** *(v7.2 new)* — Parallel tri-channel validation (Whisper hook lines + AcoustID audio fingerprinting + filename fallback) + LRClib synced lyrics matching.
+3. **Lyric Normalizer & Structured Metatags** *(v7.2 new)* — Normalizes CJK/English punctuation (breath commas, bar line breaks) and automatically structures songs with `[Intro]`, `[Verse]`, `[Chorus]`, and `[Outro]` tags.
+4. **Instrumental Timeline Arrangement Scaffolding** *(v7.2 new)* — Fills the Suno Lyrics box with dynamic arrangement directives (`[Intro: ...]`, `[Build-up: ...]`, `[Drop: ...]`) for purely instrumental tracks.
+5. **Suno-Perceptible Music Theory Whitelist** *(v7.2 new)* — Filters musical theory into tokens that Suno actually understands (`2-5-1 jazz progression`, `four-chord pop loop`, `dorian mode`, `syncopated bass`).
+6. **Artist Deconstruction Engine** *(v7.2 new)* — `artist_feature_map.yaml` transforms banned artist names into compliant positive sound/gear/theory descriptors.
+7. **Orthogonal Auto-Exclusion Negative Prompt** *(v7.2 new)* — `auto_exclusion_map.yaml` auto-generates anti-artifact & orthogonal negative prompts (≤200 chars).
+8. **Dual-Engine Audio Analysis** — Essentia (primary) + Librosa (secondary) for production-grade precision.
+9. **Prompt Compiler & Multi-Version Output** — Safe / Recommended / Experimental prompt generation strictly within Suno attention budgets (150–350 chars).
 
 ---
 
 ## Changelog
+
+### v7.2 — Production-Ready Gating & Dual-Branch Architecture
+- **Whisper Hallucination Gate**: Automatically stops Whisper when Essentia detects `instrumentalness >= 0.7`, preventing hallucinations on instrumentals and solo sections.
+- **Three-channel Identity Detection**: Parallel evaluation of Whisper hook lines, AcoustID fingerprints, and filename cues.
+- **LRClib Synced Lyrics Integration**: Pulls timestamps and plain/synced lyrics without requiring API keys.
+- **Lyric Normalizer**: Cleans CJK punctuation into breathing and phrase breaks for natural singing cadence in Suno.
+- **Instrumental Timeline Scaffolding**: Provides structured arrangement cues in the Suno Lyrics box for instrumental generations.
+- **Suno Theory Whitelist**: Adds `theory_tags` to `suno_tag_library.yaml` mapping academic harmony to community tokens.
+- **Artist Feature Deconstruction**: `artist_feature_map.yaml` maps artist identities to positive stylistic tags, bypassing Suno name filters.
+- **Auto-Exclusion Map**: `auto_exclusion_map.yaml` provides generic quality exclusions and orthogonal genre exclusions.
+- **MIDI & Theory Engine**: `scripts/parse_midi.py` parses note-level MIDI and extracts modes/grooves.
+- **Prompt Compiler**: `scripts/compile_prompt.py` compiles multi-version Style Prompts + Negative Prompts.
 
 ### v6.0 — Dual-Engine Architecture + Product-Grade Outputs
 - **Essentia primary engine**: `KeyExtractor` (strength 0.914 vs librosa 0.677), `RhythmExtractor2013` BPM (109.94 vs 112.3), `MusicExtractor` EBU R128 LUFS (-13.34 dB), `ChordsDetection+HPCP` chord histogram with Roman numerals, `Danceability` metric

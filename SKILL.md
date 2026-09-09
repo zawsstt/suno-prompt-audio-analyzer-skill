@@ -1,91 +1,115 @@
 ---
 name: audio-analyzer
 description: "Audio analysis + lyrics transcription + LLM music producer synthesis + original song creation for Suno AI. Analyzes audio files (MP3/WAV/FLAC/AAC/OGG/M4A) returning key/mode/chords/bassline/drums/EQ/LUFS/BPM/melody/structure, auto vocal transcription with chorus detection, deep producer-perspective synthesis integrating audio features and lyric themes, then creates a brand-new original song (title + full lyrics + Suno style prompt ≤200 chars) imitating the reference track's style and production DNA. Keywords: 分析音频, suno prompt, 歌词识别, 仿写歌曲, 创作歌词, 模仿创作, 编曲参考, BPM, 和弦进行, 调性, bassline, audio analysis, lyrics transcription, imitation composition, original song creation."
-version: "6.0"
-changelog: "v6 — Dual-engine architecture: Essentia (primary, production-grade precision) + Librosa (secondary). New: EBU R128 LUFS via MusicExtractor, KeyExtractor (strength 0.9+), RhythmExtractor2013 BPM, ChordsDetection+HPCP chord histogram with Roman numerals, Essentia Danceability, Spotify-like features (valence/energy/danceability/acousticness/instrumentalness), Cinematic/Orchestral genre category, 5-dim genre scoring, 4-dim Suno mood mapping. Graceful fallback to librosa-only if essentia unavailable. v5 — Song name detection from filename + web knowledge retrieval (genre articles, reviews, Wikipedia, producer interviews) fused into final Suno prompt for high-fidelity style replication. v4 — Multi-signal genre scoring system, genre-aware bass/drum tag selection, modal mood cross-validated with genre context, LLM synthesis hint."
+version: "7.2"
+changelog: "v7.2 — Production-ready release: 1. Dual-branch architecture (Vocal vs Instrumental) with zero-dependency Whisper hallucination gating (instrumentalness >= 0.7 skips Whisper). 2. Three-channel parallel song identity detection (Whisper chorus line search + AcoustID + filename fallback) + LRClib synced lyrics integration. 3. Lyric Normalizer (breath-point comma formatting, bar-aligned phrasing, Metatag structuring). 4. Instrumental Timeline Arrangement Scaffolding (dynamic section cues in Lyrics box for instrumental tracks). 5. Suno-perceptible theory tag whitelist (dorian mode, 2-5-1, syncopated bass). 6. Artist feature deconstruction (artist_feature_map.yaml) converting banned artist names into rich stylistic descriptors. 7. Auto-exclusion generator (auto_exclusion_map.yaml) for orthogonal negative prompts (<=200 chars). 8. MIDI analysis engine (scripts/parse_midi.py) and prompt compiler (scripts/compile_prompt.py)."
 ---
 
-# Audio Analyzer v6 — Dual-Engine Production Analysis + Web Knowledge Fusion + Original Song for Suno
+# Audio Analyzer v7.2 — Multi-Channel Identification + Theory White-list Compiler + Dual-Branch Delivery for Suno
 
-Full pipeline: audio feature extraction → **song identity detection → web knowledge retrieval** → vocal transcription → music producer deep analysis → original song creation → Suno prompt.
+Full pipeline: audio feature extraction → **Whisper hallucination gate → dual-branch pipeline (vocal / instrumental) → multi-channel identity detection (Whisper/AcoustID/Filename) → LRClib normalization & timeline scaffolding → theory tag compiler & artist deconstruction → Suno prompt & structured delivery**.
 
 ---
 
 ## Pipeline Overview
 
 ```
-Step 0  Detect song identity  →  filename → song name + artist (if named)
-Step 1  Run analysis script   →  raw JSON (audio features + whisper lyrics)
-Step 1b Web knowledge fetch   →  genre articles, reviews, Wikipedia, producer info
-Step 2  Present analysis report  →  structured sections ①–⑫
-Step 3  LLM synthesis         →  fuse audio data + web knowledge, style tag validation
-Step 4  Original song creation  →  new title + full lyrics + final Suno prompt
+【Input Audio】
+    │
+    ▼
+Step 0: Fast Audio Features & Hallucination Gate (instrumentalness >= 0.7)
+    │
+    ├─[instrumentalness >= 0.7]─────────────┐
+    │                                       │
+    │  【Instrumental Branch】               │  【Vocal Branch】
+    │  0b: Audio Fingerprint (AcoustID)     │  0a: Whisper (hallucination guarded) → lyrics line query
+    │  0c: Filename fallback                │  0b: Audio Fingerprint (parallel)
+    │  (Whisper channel physically closed)  │  0c: Filename fallback
+    │                                       │
+    └───────────────────┬───────────────────┘
+                        ▼
+            Step 1: Identity & Lyrics Ground Truth
+            - LRClib synced lyrics query & Lyric Normalizer
+            - Or Instrumental Timeline Scaffolding
+                        │
+        ┌───────────────┴───────────────┐
+        ▼                               ▼
+Step 1d: Cultural & Artist Profile     Step 1e: Theory & MIDI Analysis
+- Artist deconstruction dict            - Suno-perceptible theory tag whitelist
+- Production & era context              - MIDI/pyin chord & progression analysis
+        │                               │
+        └───────────────┬───────────────┘
+                        ▼
+Step 3: Prompt Compiler (Theory + Audio + Culture Triangulation)
+- Style prompts (Safe / Recommended / Experimental, target 150-350 chars)
+- Orthogonal Negative Prompt (<=200 chars, auto-exclusion map)
+                        │
+                        ▼
+Step 4: Structured Delivery
+【Vocal Branch】                        【Instrumental Branch】
+① Normalized Metatag Lyrics             ① Instrumental Timeline Scaffolding
+② 3 Version Style Prompts               ② 3 Version Style Prompts
+③ Negative Prompt (<=200 chars)         ③ Negative Prompt (<=200 chars)
+④ (Optional) sketch.mid                 ④ (Optional) sketch.mid
 ```
 
 Steps 1 is script-driven. **Steps 0, 1b, 3–4 are Claude's work** — web knowledge fusion is the v5 core upgrade.
 
 ---
 
-## Step 0 — Song Identity Detection（歌曲身份识别）
+## Step 0 & Step 1 — Multi-Channel Identification & Audio Analysis
 
-**在运行脚本之前，先从文件名中提取歌曲信息。**
-
-```python
-import os
-filename = os.path.splitext(os.path.basename(file_path))[0]
-# filename 就是用户起的歌名，例如："Blinding Lights" 或 "The Weeknd - Blinding Lights"
+### 1. 运行核心分析脚本
+```bash
+python scripts/analyze_audio.py <file_path> > analysis.json
 ```
+- **Whisper 幻觉门禁（v7.2 新增）**：当 Essentia 检测到 `instrumentalness >= 0.7` 时，脚本物理关闭 Whisper 通道，零成本杜绝器乐段落引起的重复循环文本幻觉。
 
-### 解析规则
-
-| 文件名格式 | 解析结果 |
-|---|---|
-| `歌手名 - 歌名.mp3` | artist="歌手名", title="歌名" |
-| `歌名.mp3` | title="歌名", artist=未知 |
-| `01 歌名.mp3` | 去掉数字前缀，title="歌名" |
-| `随机字符.mp3` / `recording.mp3` | 无法识别 → 跳过 Step 1b |
-
-**识别结论（Step 0 输出）：**
+### 2. 身份确认与歌词结构化
+```bash
+python scripts/identify_song.py <file_path> analysis.json
 ```
-🎵 识别到歌曲：[歌名] — [歌手]（如有）
-   将在 Step 1b 搜索该曲目的风格资料
-```
-若文件名无法识别为歌名，直接标注"⚠️ 文件名无法识别为歌名，跳过网络查询，仅使用音频数据"。
+- **三通道并行识别**：歌词候选句匹配（LRClib 同步歌词） + 音频指纹（AcoustID） + 文件名兜底。
+- **人声分支**：自动拉取歌词并经过 **Lyric Normalizer** 处理（全半角统一、逗号换气清洗、小节换行），输出带 `[Intro] [Verse] [Chorus] [Outro]` 的规范 Metatag 歌词。
+- **器乐分支**：自动生成 **Instrumental Timeline Scaffolding**（时间线编排脚手架），填入 Suno Lyrics 框精准控制各段落起伏。
 
 ---
 
-## Step 1 — Run Analysis Script
+## Step 1b — Web Knowledge & Artist Deconstruction 🌐
 
-### Install dependencies (first time only)
-```bash
-pip install librosa soundfile scipy faster-whisper --quiet
-```
-
-### Run
-```bash
-python3 ~/.openclaw/skills/audio-analyzer/scripts/analyze_audio.py <file_path>
-```
-
-### Download if URL
-```bash
-curl -sL -o /tmp/files/$(date +%s).wav "<URL>"
-```
+从 Step 1 确认的曲目与艺人信息，发起网络搜索或查阅本地艺人解构词典 (`artist_feature_map.yaml`)：
+- **合规红线**：Suno 官方禁止在 Style Prompt 中包含艺人姓名。
+- **艺人解构机制**：将检索命中的艺人转换为正向的音色、设备、乐理描述词（如 `The Weeknd` → `dark R&B, vintage 80s analog synth bass, soaring falsetto, pulsing arpeggios`）。
 
 ---
 
-## Step 1b — Web Knowledge Retrieval（网络知识检索）🌐 v5 新增
+## Step 1e — MIDI & Music Theory Analysis (v7.2 新增)
 
-**脚本运行后，立即并行发起网络搜索，为 Step 3 风格融合做准备。**
-
-仅当 Step 0 成功识别歌名时执行此步骤。
-
-### 搜索策略
-
-使用 agent-browser / web_fetch，依次抓取以下来源：
-
-#### 优先级 1：Wikipedia / 百科（最权威）
+若用户提供了 `.mid` 文件或执行了本地转写：
+```bash
+python scripts/parse_midi.py <midi_file_path>
 ```
-搜索词："{歌名} {歌手} wikipedia"
+提取的理论标签严格经过 **Suno 可感知词汇白名单 (`theory_tags`)** 过滤：
+- ✅ **允许输出**：`2-5-1 jazz progression`, `four-chord pop loop`, `dorian mode`, `minor pentatonic`, `syncopated bass`, `half-time drum beat` 等。
+- ❌ **禁止输出**：`tritone substitution`, `hypodorian`, `iv6-V7` 等模型无统计先验的生僻术语。
+
+---
+
+## Step 3 — Suno Prompt Compiler (Prompt 编译器)
+
+运行编译器一键生成多版本 Prompt 与正交 Negative Prompt：
+```bash
+python scripts/compile_prompt.py analysis.json "歌手名"
+```
+
+### 1. 字符预算与权重排列
+- **结构顺序**：`Genre(1-2) → Mood(1-2) → 乐理Tag(1-2) → Instruments(2-3) → Vocals(1) → Production(1-2)`，前置权重更高。
+- **目标字符数**：150–350 字符（8–12 个逗号分隔标签），防止散文导致注意力稀释。
+
+### 2. 自动生成 Negative Prompt (≤200 字符)
+基于 `auto_exclusion_map.yaml` 自动组装：
+- **通用防瑕疵**：`muddy mix, low quality, harsh distortion, clipping, muffled vocals`
+- **正交风格互斥**：排除互斥的大流派，**严禁与正向乐器同根词取反**。
 目标：风格标签、专辑信息、制作人、影响力来源
 提取字段：
   - genre（流派标签，Wikipedia 往往非常精准）
