@@ -1,145 +1,94 @@
 # audio-analyzer-skill
 
-Audio analysis + lyrics transcription + web knowledge fusion + LLM music producer synthesis + original song creation for Suno AI
+Audio analysis + lyric forced alignment + Suno prompt compilation for original song creation.
 
-**Current version: v7.2**
-
----
-
-## What It Does
-
-Full pipeline for high-fidelity Suno music generation & production reverse-engineering:
-
-1. **Dual-Branch Architecture & Hallucination Gate** *(v7.2 new)* — Zero-dependency gating using `instrumentalness >= 0.7` to cut off Whisper and eliminate instrumental looping text hallucinations.
-2. **Multi-Channel Song Identity Detection** *(v7.2 new)* — Parallel tri-channel validation (Whisper hook lines + AcoustID audio fingerprinting + filename fallback) + LRClib synced lyrics matching.
-3. **Lyric Normalizer & Structured Metatags** *(v7.2 new)* — Normalizes CJK/English punctuation (breath commas, bar line breaks) and automatically structures songs with `[Intro]`, `[Verse]`, `[Chorus]`, and `[Outro]` tags.
-4. **Instrumental Timeline Arrangement Scaffolding** *(v7.2 new)* — Fills the Suno Lyrics box with dynamic arrangement directives (`[Intro: ...]`, `[Build-up: ...]`, `[Drop: ...]`) for purely instrumental tracks.
-5. **Suno-Perceptible Music Theory Whitelist** *(v7.2 new)* — Filters musical theory into tokens that Suno actually understands (`2-5-1 jazz progression`, `four-chord pop loop`, `dorian mode`, `syncopated bass`).
-6. **Artist Deconstruction Engine** *(v7.2 new)* — `artist_feature_map.yaml` transforms banned artist names into compliant positive sound/gear/theory descriptors.
-7. **Orthogonal Auto-Exclusion Negative Prompt** *(v7.2 new)* — `auto_exclusion_map.yaml` auto-generates anti-artifact & orthogonal negative prompts (≤200 chars).
-8. **Dual-Engine Audio Analysis** — Essentia (primary) + Librosa (secondary) for production-grade precision.
-9. **Prompt Compiler & Multi-Version Output** — Safe / Recommended / Experimental prompt generation strictly within Suno attention budgets (150–350 chars).
+**Current version: v7.3**
 
 ---
 
-## Changelog
+## The question this project answers
 
-### v7.2 — Production-Ready Gating & Dual-Branch Architecture
-- **Whisper Hallucination Gate**: Automatically stops Whisper when Essentia detects `instrumentalness >= 0.7`, preventing hallucinations on instrumentals and solo sections.
-- **Three-channel Identity Detection**: Parallel evaluation of Whisper hook lines, AcoustID fingerprints, and filename cues.
-- **LRClib Synced Lyrics Integration**: Pulls timestamps and plain/synced lyrics without requiring API keys.
-- **Lyric Normalizer**: Cleans CJK punctuation into breathing and phrase breaks for natural singing cadence in Suno.
-- **Instrumental Timeline Scaffolding**: Provides structured arrangement cues in the Suno Lyrics box for instrumental generations.
-- **Suno Theory Whitelist**: Adds `theory_tags` to `suno_tag_library.yaml` mapping academic harmony to community tokens.
-- **Artist Feature Deconstruction**: `artist_feature_map.yaml` maps artist identities to positive stylistic tags, bypassing Suno name filters.
-- **Auto-Exclusion Map**: `auto_exclusion_map.yaml` provides generic quality exclusions and orthogonal genre exclusions.
-- **MIDI & Theory Engine**: `scripts/parse_midi.py` parses note-level MIDI and extracts modes/grooves.
-- **Prompt Compiler**: `scripts/compile_prompt.py` compiles multi-version Style Prompts + Negative Prompts.
+> A reference audio file contains thousands of measurable things. Which of them
+> can be turned into words that Suno will actually read?
 
-### v6.0 — Dual-Engine Architecture + Product-Grade Outputs
-- **Essentia primary engine**: `KeyExtractor` (strength 0.914 vs librosa 0.677), `RhythmExtractor2013` BPM (109.94 vs 112.3), `MusicExtractor` EBU R128 LUFS (-13.34 dB), `ChordsDetection+HPCP` chord histogram with Roman numerals, `Danceability` metric
-- **Spotify-like semantic features**: valence / energy / danceability / acousticness / instrumentalness
-- **Cinematic/Orchestral genre category** added (Hans Zimmer / John Williams styles)
-- **5-dimensional genre inference**: danceability + valence + BPM + key + LUFS
-- **4-dimensional Suno mood mapping**: Danceability × Valence × Energy × Key → 8 precise mood words
-- **Three-version Suno prompt output** (Step 3c): Safe / Recommended / Experimental
-- **Similarity score** (Step 3d): 5-dimension pre-generation quality prediction
-- **Suno style tag library** (`suno_tag_library.yaml`): 393 community-validated tags, 7 categories, 15 power combos, 12 forbidden combos
-- **Song structure templates** (`suno_structure_templates.yaml`): 7 song form templates, 13 auto-selection rules, 18 annotated Suno structure tags
-- **Lyric scaffold templates** (`suno_lyric_scaffolds.md`): 3 complete scaffolds with placeholder annotations
-- **Graceful fallback** to librosa-only mode if essentia unavailable
+Suno reads three text fields — **Style**, **Lyrics**, **Exclude**. It does not
+read LUFS, chroma, Roman numerals, drum timestamps or MFCC vectors. Anything
+measured that cannot be written into one of those three fields is report-only.
 
-### v5.0 — Web Knowledge Fusion
-- Song name detection from filename, web knowledge retrieval from 4 sources (Wikipedia / reviews / producer interviews / lyrics), three-way triangulation protocol, priority override: Wikipedia > reviews > script data
+So the pipeline answers four questions and nothing else:
 
-### v4.0 — Multi-Signal Genre Scoring
-- 12+ genre scoring system, genre-aware bass/drum tag selection, modal mood cross-validated with genre context
+1. Vocal or instrumental?
+2. What is the style character?
+3. What is the speed feel?
+4. New lyrics, or structure only?
 
 ---
 
-## Why v6 Is More Accurate
+## What v7.3 fixes
 
-### Engine Comparison
+v7.2's main path was broken in ways that produced confidently wrong tags. The
+short version:
 
-| Metric | librosa (v4/v5) | Essentia (v6) | Improvement |
+| # | v7.2 behaviour | Consequence | v7.3 fix |
 |---|---|---|---|
-| Key detection | A# minor, conf=0.677 | **D minor, strength=0.914** | +35% confidence |
-| BPM | 112.3 | **109.94** | EBU-standard precision |
-| LUFS | -16.2 (approx) | **-13.34** (EBU R128) | Industry standard |
-| Chords | Basic triads only | **Chord histogram** (Dm 44%, D 14.8%, G 11.5%…) | Full distribution |
-| Genre | BPM+hihat rules | **5-dim scoring** (dance+valence+BPM+key+LUFS) | Cinematic recognized |
+| 1 | Whisper was gated on `instrumentalness >= 0.7`, but that score was computed as `0.95 whenever has_lyrics is False`, and `has_lyrics` was only set *after* Whisper ran | The score was always 0.95, Whisper never ran, the vocal branch was unreachable, and every song was treated as instrumental | The gate is now acoustic and runs **before** transcription. It returns `vocal` / `instrumental` / `unknown`, and only a confident `instrumental` skips transcription. `unknown` escalates. |
+| 2 | `detect_mode()` returned `Phrygian` whenever b6 and b7 were strong | Natural minor **is** b6 + b7, so almost every minor song was labelled Phrygian and the compiler wrote `phrygian tension` into the prompt | Phrygian requires a measured flat 2nd ≥ 0.35 that also beats the natural 2nd. Natural minor resolves to Aeolian, and the decision is recorded in `modal_evidence`. |
+| 3 | Two compilers: `generate_suno_prompt()` capped Style at 120/200 chars, `compile_prompt.py` documented 150–350 | The prompt depended on which script the agent happened to call | One compiler, one budget per field, defined once in `suno_contract.py`. `analyze_audio.py` builds no prompts. |
+| 4 | `chord_to_roman()` only recognised `Am`, but Essentia emits `A:min` | Every minor chord was read as major; the whole Roman-numeral block skewed major | Chord parsing handles `A:min`, `A:maj`, flats, and `N`/`NC`. |
+| 5 | `suno_tag_library.yaml`'s `theory_tags` whitelist was never read | Tags were emitted from a guess chain, with a `four-chord pop loop` fallback | Triggers are evaluated against real evidence. No evidence means an empty list, never a default tag. |
+| 6 | `auto_exclusion_map.yaml` was keyed `cinematic_orchestral` while the compiler tested `"cinematic_orchestral" in "cinematic, orchestral"` | Orthogonal exclusion almost never fired — only `lo-fi` matched, by substring accident | Canonical keys with explicit `matches` alias lists. Matching is exact after normalisation. |
+| 7 | Generic exclusions were appended unconditionally | `harsh distortion` cancelled a requested distorted guitar; `muffled vocals` cancelled an intentionally muffled vocal | Every negative tag passes a same-root check. Conflicts are dropped and the reason is recorded. |
+| 8 | Over-long output was cut with `[:197] + "..."` | The trailing ellipsis became a style token | Whole tags are dropped, least-important first. No ellipsis is ever emitted. |
+| 9 | After identifying the track, `format_structured_lyrics()` repunctuated the reference song's real lyrics and handed them to Suno | The "original song" output was a cover | The reference contributes **statistics only**: syllable density, hook length, perspective, rhyme, section shape. Reference words are withheld unless you explicitly opt into cover mode. |
+| 10 | `generate_instrumental_timeline()` claimed to read the energy curve but was a hard-coded Intro/Build/Drop/Climax arc | A lo-fi loop and a Zimmer score got the identical seven-part structure, and the measured `energy_drop_times_sec` was discarded | Section labels require evidence. `Drop` needs a measured drop; `Climax` needs a peak clearly above the median. No evidence means one neutral line. |
+| 11 | The README advertised "three-channel identity detection", but `get_acoustid_fingerprint()` was never called and there was no AcoustID query | The claim was false; a filename match alone got 0.9 confidence with no duration check | Channels report honestly what ran. AcoustID is either really queried or reported unavailable. Every match is duration-checked. |
+| 12 | `parse_midi.py` returned `["four-chord pop loop", "syncopated bass"]` when `pretty_midi` was missing | Tags were invented for music that was never analysed | Missing dependency means `available: false` and an empty tag list. Chords are actually detected; drums are excluded from pitch statistics; bass syncopation is measured on the bass only. |
+| 13 | Beat-interval variance was reported as "Swing type" | Rhythm instability was presented as swing | Timing steadiness and swing are separate fields. `swing_ratio` is `null` when it cannot be measured. |
+| 14 | Fixed `/tmp/_whisper_input.wav` and `tempfile.mktemp` | Concurrent analyses overwrote each other | Unique temp paths under the system temp directory. |
+| 15 | Drum density was computed after truncating onsets to 24 | Density was systematically underestimated | Counts use the full window; the onset list is truncated for display only. |
+| 16 | A single whole-file `rfft` was used as the EQ reference | A loud chorus erased a quiet verse | Per-frame band energies with a median reference plus a loudness-weighted view. |
+| 17 | `load_yaml_simple()` returned `{}` when PyYAML was missing | The artist and exclusion tables silently went empty and the pipeline still produced a prompt | PyYAML is required. The compiler stops with an explicit error. |
+| 18 | No tests, no evaluation set, `__pycache__` committed | The five-star ratings rested on one Hans Zimmer file | 108 unit tests, a 20-track listening set, and `__pycache__` removed from the repo. |
 
-*Test file: F1 Hans Zimmer theme. librosa misclassified as Trap/Hip-hop; v6 correctly identified as Cinematic/Orchestral.*
+### Removed claims
 
-### New Semantic Features (Spotify-like)
-
-```json
-"spotify_like_features": {
-  "valence": 0.28,        // emotional positivity (0=dark, 1=happy)
-  "energy": 0.82,         // intensity level
-  "danceability": 0.68,   // rhythmic drive
-  "acousticness": 0.35,   // acoustic vs electronic ratio
-  "instrumentalness": 0.98 // vocal presence estimate
-}
-```
-
-### Multi-Version Prompt Output (Step 3c)
-
-| Version | Strategy | Character Count |
-|---|---|---|
-| 🟢 Safe | Highest-confidence tags only | ≤60 chars |
-| 🎯 Recommended | Balanced precision + creativity | ≤120 chars |
-| 🔥 Experimental | Power combos + niche descriptors | ≤120 chars |
-
-### Similarity Estimation (Step 3d)
-
-Before generating, get a 5-star prediction across:
-- Rhythm fit (BPM range)
-- Tonal clarity (key strength)
-- Harmonic complexity (chord variety)
-- Dynamics reachability (LUFS zone)
-- Genre clarity (genre score gap)
+The v7.2 star ratings were deleted. They rested on a single example, and the
+"+35% confidence" figure compared librosa's correlation coefficient with
+Essentia's `strength` — two different quantities that cannot be expressed as a
+percentage improvement. Accuracy claims will be reinstated only after
+`eval/score_eval.py` produces real numbers.
 
 ---
 
-## Included Files
-
-| File | Description |
-|---|---|
-| `scripts/analyze_audio.py` | Main analysis script (dual-engine + Whisper hallucination gating, 1270 lines) |
-| `scripts/identify_song.py` | Multi-channel song identity detection, LRClib synced lyrics query, Lyric Normalizer & Instrumental Timeline Scaffolding |
-| `scripts/compile_prompt.py` | Prompt Compiler generating 3-version Style Prompts (150–350 chars) + Orthogonal Negative Prompts (≤200 chars) |
-| `scripts/parse_midi.py` | MIDI parser extracting modes, syncopated bass, and whitelisted Suno theory tags |
-| `artist_feature_map.yaml` | Positive artist deconstruction dictionary bypassing Suno's artist name filter |
-| `auto_exclusion_map.yaml` | Orthogonal negative prompts and universal anti-artifact rules |
-| `SKILL.md` | Full pipeline instructions for Claude (v7.2 dual-branch workflow) |
-| `suno_tag_library.yaml` | 400+ validated Suno style tags, 8 categories (including theory whitelist), 15 power combos |
-| `suno_structure_templates.yaml` | 7 song form templates, 18 annotated structure tags, 13 auto-selection rules |
-| `suno_lyric_scaffolds.md` | 3 complete lyric scaffold templates with placeholder annotations |
-
----
-
-## Supported Formats
-
-`MP3` / `WAV` / `FLAC` / `AAC` / `OGG` / `M4A`
-
----
-
-## Installation
-
-### 1. Install Python dependencies
+## Install
 
 ```bash
-pip install librosa soundfile scipy faster-whisper
-pip install essentia   # recommended — enables v6 dual-engine mode
+# Core analysis + compilation (required)
+pip install librosa soundfile scipy numpy pyyaml faster-whisper
+
+# Optional but recommended: better key, LUFS and chord detection.
+# Falls back to librosa cleanly when absent.
+pip install essentia
+
+# Lyric timeline (step 4 only)
+pip install demucs torch torchaudio transformers uroman
+
+# Optional accuracy upgrades
+pip install silero-vad      # real VAD for the vocal gate
+pip install pretty_midi     # MIDI chord analysis
 ```
 
-> If `essentia` install fails (requires gcc), the skill automatically falls back to librosa-only mode.
-> `ffprobe` is required (comes with `ffmpeg`). First Whisper run downloads the small model (~245MB), cached at `/tmp/whisper_models`.
+`ffmpeg` and `ffprobe` must be on PATH.
 
-### 2. Install the skill
+`PyYAML` is required, not optional. Without it the compiler cannot read the
+artist and exclusion tables and will stop rather than produce a prompt from an
+empty configuration.
 
-Place the skill folder under your OpenClaw skills directory:
+`ACOUSTID_API_KEY` is optional; it only enables the AcoustID identity channel.
+
+### Install the skill
+
+Place the folder under your skills directory:
 
 ```
 ~/.openclaw/skills/audio-analyzer/
@@ -149,74 +98,179 @@ Place the skill folder under your OpenClaw skills directory:
 
 ## Usage
 
-### 1. Basic Audio Feature Extraction
-```bash
-python3 scripts/analyze_audio.py <file_path>
-```
-Output: JSON with all audio features including `essentia_features`, `spotify_like_features`, `chord_histogram`, and `analysis_engine` fields. Automatically engages Whisper hallucination gate if `instrumentalness >= 0.7`.
+### The single entry point
 
-### 2. Multi-Channel Identity & Lyric Structuring
 ```bash
-python3 scripts/identify_song.py <file_path> analysis.json
+python scripts/run_pipeline.py song.mp3 --out-dir out
+python scripts/run_pipeline.py song.mp3 --artist "The Weeknd" --out-dir out
+python scripts/run_pipeline.py song.mp3 --style-limit 200 --exclude-limit 200
+python scripts/run_pipeline.py song.mp3 --align-lyrics lyrics.txt --out-dir out
 ```
-Output: Matches track via LRClib / AcoustID, normalizes lyrics with Suno metatags, or outputs an Instrumental Timeline Arrangement Scaffolding.
 
-### 3. Prompt Compiler
-```bash
-python3 scripts/compile_prompt.py analysis.json [optional_artist_name]
-```
-Output: Generates 3-version Style Prompts (Safe / Recommended / Experimental) within 150–350 chars alongside orthogonal Negative Prompts (≤200 chars).
+This runs analysis → identification → compilation and prints the three Suno
+fields ready to paste. It writes `analysis.json`, `identity.json` and
+`suno_prompt.json`.
 
-### 4. Optional MIDI Theory Analysis
+### Individual steps
+
 ```bash
-python3 scripts/parse_midi.py <midi_file_path>
+# 1. Measurement and evidence (builds no prompts)
+python scripts/analyze_audio.py song.mp3 > analysis.json
+python scripts/analyze_audio.py song.mp3 --vocal-presence vocal
+python scripts/analyze_audio.py song.mp3 --skip-whisper
+
+# 2. Identity and lyrics policy
+python scripts/identify_song.py song.mp3 analysis.json --out identity.json
+
+# 3. The only compiler
+python scripts/compile_prompt.py analysis.json "The Weeknd" --identity identity.json
+
+# 4. Lyric timeline for video (optional, after the song exists)
+python scripts/align_lyrics.py song.mp3 lyrics.txt analysis.json
+python scripts/align_lyrics.py song.mp3 lyrics.txt --from-lrc existing.lrc
+python scripts/align_lyrics.py song.mp3 lyrics.txt --vocals stems/vocals.wav
+
+# Optional: MIDI harmony evidence
+python scripts/parse_midi.py sketch.mid --tag-library suno_tag_library.yaml
 ```
-Output: Extracts scale modes, rhythm syncopation, and Suno-perceptible whitelisted theory tags.
 
 ---
 
-## Output JSON Structure (v7.2)
+## Output
+
+### `suno_prompt.json`
 
 ```json
 {
-  "analysis_engine": {
-    "primary": "essentia",
-    "secondary": "librosa",
-    "fallback": false
+  "mode": "vocal",
+  "vocal_presence": { "presence": "vocal", "score": 0.71, "decided_by": "acoustic" },
+  "style": {
+    "prompt": "R&B, neo-soul, mandarin vocals, warm bass, rolling hi-hats, hypnotic, four-chord pop loop, mid-tempo",
+    "char_count": 108, "limit": 200, "tags": [], "dropped": []
   },
-  "essentia_features": {
-    "bpm": 109.94,
-    "lufs_integrated": -13.34,
-    "lufs_range": 8.92,
-    "danceability": 1.35,
-    "key_extractor": { "key": "D", "scale": "minor", "strength": 0.914 },
-    "chord_histogram": { "Dm": 44.0, "D": 14.8, "G": 11.5, "Am": 7.6 }
+  "exclude": {
+    "prompt": "hardcore trap, blast beats, muddy mix, low quality, clipping",
+    "char_count": 63, "limit": 200, "dropped_same_root": []
   },
-  "spotify_like_features": {
-    "valence": 0.28,
-    "energy": 0.82,
-    "danceability": 0.68,
-    "acousticness": 0.35,
-    "instrumentalness": 0.98
-  },
-  "tonality": { "key": "D", "mode": "minor", "modal_flavor": "Aeolian" },
-  "summary": { "tempo_bpm": 110, "key_signature": "D minor" },
-  "suno_prompt": { "style_tags": "cinematic orchestral, epic, dark, driving, wide dynamics" }
+  "lyrics_plan": { "policy": "write_new", "note": "Write a NEW lyric. ..." },
+  "theory_tags": [
+    { "tag": "four-chord pop loop", "why": "progression matched i-VI-III-VII" }
+  ],
+  "artist_deconstruction": { "requested": "the weeknd", "matched_key": "The Weeknd" },
+  "report_only": { "_comment": "Report-only. These values MUST NOT be pasted into Suno." },
+  "warnings": []
 }
 ```
 
+### `analysis.json` (selected fields)
+
+```json
+{
+  "analysis_engine": { "primary": "essentia", "secondary": "librosa", "fallback": false },
+  "vocal_presence": {
+    "presence": "vocal", "score": 0.71, "confidence": 0.42,
+    "reason": "Sustained pitched activity in the vocal range dominates the mix.",
+    "decided_by": "acoustic"
+  },
+  "tonality": {
+    "key": "A minor", "modal_flavor": "Aeolian (natural minor)", "pentatonic": "minor",
+    "modal_evidence": { "b2": 0.05, "natural_2": 0.88, "flat_2_confirmed": false }
+  },
+  "rhythm": {
+    "tempo_bpm": 104.0, "rhythm_stability": "steady", "swing_type": "straight",
+    "swing_ratio": 1.0, "bass_syncopation_ratio": 0.52,
+    "beat_times_sec": [0.58, 1.16, 1.74], "downbeat_times_sec": [0.58, 2.9]
+  },
+  "frequency_bands": {
+    "sub_bass_20_60hz": { "energy_pct": 6.2, "energy_pct_loudweighted": 7.1,
+                          "energy_pct_global": 9.4 }
+  },
+  "drum_pattern": { "kick_per_bar": 2.0, "half_time": false, "sixteenth_hats": false },
+  "structure": { "energy_drop_times_sec": [40.0], "energy_peak_times_sec": [80.0] },
+  "theory_evidence": { "roman_loop": ["i", "VI", "III", "VII"], "half_time": false },
+  "lyrics": { "has_lyrics": true, "language": "zh", "lang_suno_tag": "mandarin vocals" }
+}
+```
+
+`lyrics.timeline` is a report. It must never be used as a video timeline and must
+never be pasted into the Lyrics field of an original song.
+
+### `mv_shots.json`
+
+```json
+{
+  "contract": "The timeline is locked. Only the `visual` field may be edited. `start`, `end` and `lyric` MUST NOT be changed.",
+  "shot_count": 42,
+  "needs_review_count": 3,
+  "shots": [
+    { "start": 0.0, "end": 9.8, "section": "Instrumental", "lyric": null,
+      "energy": "low", "visual": "", "needs_review": false },
+    { "start": 9.8, "end": 13.4, "section": "Verse 1", "lyric": "把夜色唱成海岸",
+      "energy": "mid", "visual": "", "needs_review": false,
+      "alignment_score": 0.87, "snap_shift_sec": -0.04 }
+  ]
+}
+```
+
+A line is flagged `needs_review` when its alignment score is low, when it lands
+where there is no vocal energy, or when it needed a large snap. Nothing is
+silently accepted.
+
 ---
 
-## Accuracy
+## Tests
 
-| Dimension | Rating | Notes |
-|---|---|---|
-| BPM | ★★★★★ | Essentia RhythmExtractor2013, EBU standard |
-| Key/Mode | ★★★★★ | Essentia KeyExtractor, strength 0.9+ |
-| Chords | ★★★★ | ChordsDetection+HPCP, chord histogram with % distribution |
-| Bassline | ★★★★ | pyin tracking, first 90s effective |
-| Drums | ★★★ | Frequency-band separation, first 8 bars effective |
-| Lyrics | ★★★ | faster-whisper small, English best |
-| Genre | ★★★★★ | Wikipedia (v5) + 5-dim Essentia scoring (v6) |
-| Style Tags | ★★★★★ | Web knowledge fusion × Essentia data × Claude triangulation |
-| Suno Prompt | ★★★★★ | 3-version output + similarity pre-check |
+```bash
+pip install pytest numpy pyyaml
+python -m pytest tests -q
+```
+
+108 tests covering the specific v7.2 regressions: natural minor must not be
+labelled Phrygian, `A:min` must parse as minor, an absent vocal measurement must
+not become `instrumental`, exclusions must not cancel requested instruments, no
+output may contain an ellipsis, and structure labels must require energy evidence.
+
+## Evaluation
+
+```bash
+python eval/score_eval.py
+```
+
+`eval/manifest.yaml` defines 20 slots with the coverage requirements and the
+ground truth to confirm by ear. Accuracy claims stay out of this README until
+that table has real numbers.
+
+---
+
+## Files
+
+| File | Role |
+|---|---|
+| `scripts/run_pipeline.py` | **Entry point.** Runs steps 1–3 in order. |
+| `scripts/analyze_audio.py` | Measurement and evidence only. |
+| `scripts/compile_prompt.py` | **The only compiler.** |
+| `scripts/identify_song.py` | Identity channels and lyrics policy. |
+| `scripts/align_lyrics.py` | Forced alignment → LRC, SRT, MV shot list. |
+| `scripts/parse_midi.py` | MIDI harmony evidence. |
+| `scripts/vocal_gate.py` | Acoustic vocal/instrumental/unknown decision. |
+| `scripts/music_theory.py` | Chord parsing, Roman numerals, mode detection. |
+| `scripts/theory_triggers.py` | Evidence-gated theory tags. |
+| `scripts/exclusion_rules.py` | Canonical genre matching, same-root filtering. |
+| `scripts/structure_plan.py` | Energy-derived section labels. |
+| `scripts/lyric_utils.py` | Lyric parsing, transferable style statistics. |
+| `scripts/shot_builder.py` | Beat snapping, shot merging/splitting, export. |
+| `scripts/suno_contract.py` | Field budgets, slot order, tag vocabulary. |
+| `scripts/yaml_io.py` | Explicit config loading. |
+| `auto_exclusion_map.yaml` | Canonical exclusion keys with `matches` aliases. |
+| `artist_feature_map.yaml` | Artist → compliant descriptors, with aliases. |
+| `suno_tag_library.yaml` | Tag vocabulary and the theory whitelist. |
+| `suno_structure_templates.yaml` | Section tag reference. |
+| `suno_lyric_scaffolds.md` | Lyric scaffold reference. |
+| `tests/` | 108 unit tests. |
+| `eval/` | 20-track listening set and scoring script. |
+
+---
+
+## Supported formats
+
+`MP3` / `WAV` / `FLAC` / `AAC` / `OGG` / `M4A`

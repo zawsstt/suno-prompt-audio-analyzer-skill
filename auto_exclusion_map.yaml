@@ -1,8 +1,39 @@
-# Suno AI Auto-Exclusion Map v1.0
-# Purpose: Generate targeted exclusion tags for Suno "Exclude Styles / Negative Prompt" (<= 200 chars).
-# Core Rule: Cross-dimensional orthogonal exclusion ONLY. NEVER exclude the same instrument root as positive tags.
+# Suno AI Auto-Exclusion Map v2.0
+#
+# Purpose: generate the "Exclude Styles" string (default <= 200 chars).
+#
+# v7.2 BUG THIS FIXES
+# -------------------
+# The old file was keyed `cinematic_orchestral` and `jazz_neo_soul`, while the
+# compiler tested:
+#
+#     if g_key in genre_clean          # g_key = "cinematic_orchestral"
+#                                      # genre_clean = "cinematic, orchestral"
+#
+# `"cinematic_orchestral" in "cinematic, orchestral"` is False, so orthogonal
+# exclusion almost never fired. Only `lo-fi` matched, and only because it
+# happened to be a substring of the emitted genre string.
+#
+# v7.3 CONTRACT
+# -------------
+# Every canonical key declares a `matches` list containing the EXACT strings the
+# compiler can emit (see scripts/suno_contract.py GENRE_TO_SUNO_TAGS).
+# Matching is by normalised exact equality, never by substring accident.
+#
+# RULES
+# -----
+# 1. Never exclude an instrument that a positive tag already requested. The
+#    compiler enforces this automatically via a shared-root check, so a list
+#    entry here can still be dropped at runtime. That is expected.
+# 2. `generic_quality_exclusions` is no longer appended unconditionally. A
+#    generic tag that shares an instrument root with a positive tag is removed
+#    (e.g. "harsh distortion" disappears when "distorted guitar" was requested,
+#    and "muffled vocals" disappears when any vocal tag was requested).
+# 3. Over-long output drops WHOLE tags. A trailing "..." must never be emitted.
 
-# Generic anti-artifact tags (universal across all genres)
+# ---------------------------------------------------------------------------
+# Universal anti-artefact tags
+# ---------------------------------------------------------------------------
 generic_quality_exclusions:
   tags:
     - "muddy mix"
@@ -12,34 +43,98 @@ generic_quality_exclusions:
     - "muffled vocals"
     - "noisy background"
     - "amateur mix"
-  default_string: "muddy mix, low quality, harsh distortion, clipping, muffled vocals"
+  note: >
+    Candidates only. Each one still passes the same-root filter against the
+    positive prompt, so a deliberately distorted or lo-fi track keeps its own
+    character instead of being cancelled by its own negative tags.
 
-# Orthogonal genre conflict exclusions (broad style divergence only)
+# ---------------------------------------------------------------------------
+# Orthogonal genre conflicts
+# ---------------------------------------------------------------------------
 genre_conflict_exclusions:
-  lo-fi:
-    exclude: ["EDM", "heavy metal", "harsh synth", "autotune", "stadium rock", "punchy modern club beat"]
-    reason: "Lo-fi requires vintage warmth and relaxed aesthetic"
 
-  indie_folk:
-    exclude: ["EDM", "dubstep", "distorted 808s", "heavy metal riffs", "autotune", "club dance beat"]
-    reason: "Folk requires acoustic and organic instrument separation"
+  deep_house:
+    matches: ["deep house", "house"]
+    exclude: ["heavy metal", "screaming vocals", "blast beats", "distorted guitar riffs"]
+    reason: "House needs a clean four-on-the-floor pocket, not a rock/metal wall."
+
+  tech_house:
+    matches: ["tech house"]
+    exclude: ["orchestral strings", "choir", "ballad", "acoustic folk"]
+    reason: "Tech house is a club tool; symphonic and ballad textures fight it."
+
+  trance_progressive:
+    matches: ["progressive trance", "trance"]
+    exclude: ["lo-fi crackle", "boom bap", "spoken word", "sludge metal"]
+    reason: "Trance needs forward motion and clean supersaws."
+
+  drum_and_bass:
+    matches: ["drum and bass", "breakbeat"]
+    exclude: ["ballad tempo", "acoustic folk", "orchestral strings", "waltz"]
+    reason: "Breakbeat tempo and acoustic balladry do not coexist."
+
+  techno_hard:
+    matches: ["techno", "hard techno"]
+    exclude: ["orchestral strings", "acoustic guitar", "ballad", "swing jazz"]
+    reason: "Techno is machine music; organic ballad textures dilute it."
+
+  edm_big_room:
+    matches: ["EDM", "big room"]
+    exclude: ["lo-fi crackle", "acoustic guitar", "spoken word", "jazz trio"]
+    reason: "Festival EDM needs a bright, wide, synthetic presentation."
+
+  trap_hiphop:
+    matches: ["trap", "hip-hop"]
+    exclude: ["orchestral strings", "polka", "bluegrass banjo", "stadium rock"]
+    reason: "Trap lives on sparse 808s and rolling hats."
+
+  lo_fi_boom_bap:
+    matches: ["lo-fi hip-hop", "boom bap"]
+    exclude: ["EDM", "heavy metal", "harsh synth", "autotune", "stadium rock",
+              "punchy modern club beat"]
+    reason: "Lo-fi needs vintage warmth and a relaxed pocket."
+
+  rnb_neo_soul:
+    matches: ["R&B", "neo-soul"]
+    exclude: ["screaming metal vocals", "aggressive EDM synths", "hardcore trap",
+              "blast beats"]
+    reason: "Neo-soul needs harmonic warmth and a subtle swing."
+
+  ambient_cinematic:
+    matches: ["ambient", "cinematic"]
+    exclude: ["aggressive drums", "shouted vocals", "fast tempo",
+              "heavy guitar distortion", "breakneck"]
+    reason: "Ambient needs open space and minimal percussive impact."
 
   cinematic_orchestral:
-    exclude: ["trap drums", "autotune pop vocals", "lo-fi crackle", "scratching", "EDM build-up", "808 bass"]
-    reason: "Orchestral requires symphonic purity and dynamic headroom"
+    matches: ["cinematic orchestral", "epic orchestral"]
+    exclude: ["trap drums", "autotune pop vocals", "lo-fi crackle", "scratching",
+              "EDM build-up", "808 bass"]
+    reason: "Orchestral needs symphonic purity and dynamic headroom."
 
-  ambient:
-    exclude: ["aggressive drums", "shouted vocals", "fast tempo", "heavy guitar distortion", "breakneck"]
-    reason: "Ambient requires open space and minimal percussive impact"
+  pop_indie:
+    matches: ["indie pop", "pop"]
+    exclude: ["blast beats", "harsh noise", "death growls", "free jazz"]
+    reason: "Pop keeps a clear vocal and a defined hook."
 
-  jazz_neo_soul:
-    exclude: ["screaming metal vocals", "aggressive EDM synths", "distorted techno bass", "hardcore trap"]
-    reason: "Jazz/soul requires harmonic warmth and subtle swing"
+  rock_alternative:
+    matches: ["alternative rock", "indie rock"]
+    exclude: ["orchestral strings", "big room drop", "lo-fi crackle",
+              "spoken word"]
+    reason: "Guitar-band arrangements want a live, uncluttered stage."
 
-  acoustic_pop:
-    exclude: ["heavy industrial synths", "metallic distortion", "aggressive screams", "dubstep wobble"]
-    reason: "Acoustic pop focuses on vocal intimacy and clean guitars/pianos"
+  folk_acoustic:
+    matches: ["indie folk", "acoustic"]
+    exclude: ["EDM", "dubstep", "distorted 808s", "heavy metal riffs", "autotune",
+              "club dance beat"]
+    reason: "Folk requires acoustic separation and an organic performance."
 
-  synthwave_retro:
-    exclude: ["acoustic bluegrass banjo", "heavy acoustic drums", "folk instruments", "traditional ethnic flutes"]
-    reason: "Synthwave strictly anchors to 80s analog/digital electronic gear"
+  jazz:
+    matches: ["jazz"]
+    exclude: ["blast beats", "distorted 808s", "big room drop", "harsh noise"]
+    reason: "Jazz needs dynamic nuance and harmonic room to breathe."
+
+  electronic:
+    matches: ["electronic"]
+    exclude: ["orchestral strings", "polka", "acoustic folk", "waltz"]
+    reason: "Fallback bucket; only very broad divergences are excluded."

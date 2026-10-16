@@ -1,0 +1,191 @@
+# Suno Prompt Pipeline -- 20-track listening evaluation set
+#
+# WHY THIS EXISTS
+# ---------------
+# v7.2's README advertised five-star accuracy for BPM, key, genre and prompt
+# quality, based on a single Hans Zimmer test file. A single example is not an
+# evaluation, and the "+35% confidence" claim compared librosa's correlation
+# coefficient with Essentia's `strength`, which are different quantities and
+# cannot be expressed as a percentage improvement.
+#
+# RULE: no star rating may appear in README.md until this set has been filled in
+# and scored. The claims should follow the measurement, not precede it.
+#
+# HOW TO USE
+# ----------
+# 1. Put one audio file per slot in eval/audio/ (gitignored: reference tracks
+#    are usually copyrighted and must not be committed).
+# 2. Fill in `audio:` and confirm the `expected:` values BY LISTENING. These are
+#    the ground truth. If you cannot tell by ear, pick a different track --
+#    a ground truth you are unsure about is not a ground truth.
+# 3. Run:  python eval/score_eval.py
+# 4. Paste the resulting accuracy table into README.md.
+#
+# COVERAGE REQUIREMENTS (20 slots)
+# --------------------------------
+#   vocal / instrumental ............ at least 5 of each, plus 2 genuinely
+#                                     ambiguous tracks to exercise `unknown`
+#   Phrygian vs natural minor ....... at least 3 true Phrygian, at least 5
+#                                     natural minor (this is the v7.2 bug)
+#   half-time vs full-time .......... at least 3 of each
+#   mode ............................ major, natural minor, dorian, mixolydian,
+#                                     phrygian all represented
+#   genre family .................... electronic, hip-hop, rock, folk/acoustic,
+#                                     jazz/soul, cinematic, pop all represented
+#   tempo range ..................... at least one track under 70 BPM and one
+#                                     over 150 BPM
+#
+# The tracks below are SLOTS, not recommendations. Replace them.
+
+version: 1
+audio_dir: eval/audio
+
+dimensions:
+  - id: vocal_presence
+    question: "Does the track contain singing?"
+    values: [vocal, instrumental, unknown]
+    pipeline_field: vocal_presence.presence
+
+  - id: modal_flavor
+    question: "What is the modal colour of the main key?"
+    values: ["Ionian (natural major)", Mixolydian, Dorian, "Aeolian (natural minor)", Phrygian]
+    pipeline_field: tonality.modal_flavor
+
+  - id: phrygian
+    question: "Is the track genuinely Phrygian (flat 2nd is a structural tone)?"
+    values: [true, false]
+    pipeline_field: theory_evidence.modal_evidence.flat_2_confirmed
+    note: "The v7.2 regression. Natural minor must never be reported as Phrygian."
+
+  - id: feel
+    question: "Is the groove half-time or full-time?"
+    values: [half_time, full_time]
+    pipeline_field: drum_pattern.half_time
+
+  - id: tempo_band
+    question: "Which speed band does the track sit in?"
+    values: ["<70", "70-90", "90-110", "110-130", "130-150", ">150"]
+    pipeline_field: summary.tempo_bpm
+
+tracks:
+
+  # --- Electronic ---
+  - id: e01
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "110-130"}
+    note: "Deep house, instrumental, no swing"
+  - id: e02
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: Dorian, phrygian: false,
+               feel: full_time, tempo_band: "110-130"}
+    note: "Vocal house in dorian -- must NOT be reported as Phrygian"
+  - id: e03
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: ">150"}
+    note: "Drum and bass, fast tempo band"
+
+  # --- Hip-hop / R&B ---
+  - id: h01
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: half_time, tempo_band: "130-150"}
+    note: "Trap: half-time feel at a high BPM number"
+  - id: h02
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "70-90"}
+    note: "Lo-fi boom bap loop, no vocals"
+  - id: h03
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: "Ionian (natural major)",
+               phrygian: false, feel: full_time, tempo_band: "70-90"}
+    note: "Neo-soul with a major-key chorus"
+
+  # --- Rock / Metal ---
+  - id: r01
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "110-130"}
+    note: "Standard alternative rock in natural minor -- the classic false Phrygian"
+  - id: r02
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "130-150"}
+    note: "Post-rock crescendo, no vocals"
+  - id: r03
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: Phrygian, phrygian: true,
+               feel: full_time, tempo_band: "130-150"}
+    note: "True Phrygian: flat 2nd must be a structural tone, e.g. metal with a bII riff"
+
+  # --- Folk / Acoustic ---
+  - id: f01
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: "Ionian (natural major)",
+               phrygian: false, feel: full_time, tempo_band: "70-90"}
+    note: "Fingerpicked acoustic folk, major"
+  - id: f02
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: Mixolydian, phrygian: false,
+               feel: full_time, tempo_band: "90-110"}
+    note: "Blues-rock / folk mixolydian"
+  - id: f03
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "<70"}
+    note: "Slow solo acoustic instrumental, sub-70 BPM"
+
+  # --- Jazz / Soul ---
+  - id: j01
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: "Ionian (natural major)",
+               phrygian: false, feel: full_time, tempo_band: "90-110"}
+    note: "Swing feel vocal jazz -- exercises swing_ratio and 2-5-1"
+  - id: j02
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: Dorian, phrygian: false,
+               feel: full_time, tempo_band: "90-110"}
+    note: "Dorian jazz-funk instrumental"
+
+  # --- Cinematic / Ambient ---
+  - id: c01
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "70-90"}
+    note: "Hybrid orchestral with a real build and drop -- exercises structure evidence"
+  - id: c02
+    audio: null
+    expected: {vocal_presence: instrumental, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "<70"}
+    note: "Flat ambient bed with NO drop -- must not receive an invented arc"
+  - id: c03
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: Phrygian, phrygian: true,
+               feel: full_time, tempo_band: "90-110"}
+    note: "Dark trailer music with wordless vocals and a Phrygian bII"
+
+  # --- Pop ---
+  - id: p01
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: "Aeolian (natural minor)",
+               phrygian: false, feel: full_time, tempo_band: "110-130"}
+    note: "Mandopop ballad in natural minor"
+  - id: p02
+    audio: null
+    expected: {vocal_presence: vocal, modal_flavor: "Ionian (natural major)",
+               phrygian: false, feel: full_time, tempo_band: "110-130"}
+    note: "Radio pop in major, four-chord loop -- exercises the progression trigger"
+
+  # --- Deliberately ambiguous (must resolve to `unknown`, then be escalated) ---
+  - id: x01
+    audio: null
+    expected: {vocal_presence: unknown, modal_flavor: null, phrygian: null,
+               feel: null, tempo_band: null}
+    note: "Heavily processed/vocoded vocal treated as an instrument. The gate must say 'unknown' and let transcription decide, NOT 'instrumental'."
+  - id: x02
+    audio: null
+    expected: {vocal_presence: unknown, modal_flavor: null, phrygian: null,
+               feel: null, tempo_band: null}
+    note: "Long spoken-word intro followed by singing. Ambiguity is the point."

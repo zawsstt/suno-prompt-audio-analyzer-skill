@@ -1,64 +1,107 @@
-# Suno AI Artist Feature Map v1.0
-# Purpose: Positive deconstruction of artist styles into compliant Suno descriptors.
-# Red line: Artist names must NEVER appear in final Suno prompts (compliance filter).
+# Suno AI Artist Feature Map v2.0
+#
+# Purpose: positive deconstruction of an artist's style into compliant Suno
+# descriptors, so a reference can be described without naming the artist.
+#
+# Red line: artist names must NEVER appear in the final Suno prompt. The compiler
+# enforces this with a leak guard, so even a bad edit here cannot ship a name.
+#
+# v7.2 BUG THIS FIXES
+# -------------------
+# Lookup was `if artist_name in artist_data`, an exact, case-sensitive string
+# match. `the weeknd` never matched `The Weeknd`, so deconstruction silently did
+# nothing. v7.3 normalises to lowercase alphanumerics and supports `aliases`.
+#
+# HOW TO ADD AN ARTIST
+# --------------------
+#   "Canonical Name":
+#     aliases: ["lowercase form", "local-language form"]
+#     genres: [...]
+#     production_sound: [...]   # the first 2 are used
+#     vocals: [...]             # the first 1 is used
+#     theory: [...]             # the first 1 is used
+#
+# Keep the deconstruction SPECIFIC. "dark synth bass" is useful to Suno;
+# "sounds like a famous artist" is not.
 
 artist_mappings:
+
   # --- Pop & R&B ---
   "The Weeknd":
+    aliases: ["the weeknd", "weeknd", "the-weeknd"]
     genres: ["synth-pop", "dark R&B", "alternative R&B"]
-    production_sound: ["vintage 80s analog synth bass", "reverb-drenched pads", "pulsing arpeggios", "gated reverb drums"]
+    production_sound: ["vintage 80s analog synth bass", "reverb-drenched pads",
+                       "pulsing arpeggios", "gated reverb drums"]
     vocals: ["soaring falsetto", "melancholic vocal delivery", "reverb tail vocals"]
     theory: ["minor pentatonic", "Aeolian progression", "four-on-the-floor groove"]
     recommended_tags: "dark R&B, synth-pop, vintage 80s analog synth bass, soaring falsetto, pulsing arpeggios, melancholic, 170 BPM"
 
   "Jay Chou":
+    aliases: ["jay chou", "chou jay", "周杰伦", "周杰倫"]
     genres: ["mandopop", "R&B fusion", "chinese style pop"]
-    production_sound: ["guzheng acoustic pluck", "lo-fi vinyl crackle", "lush string quartet", "punchy boom bap beat"]
+    production_sound: ["guzheng acoustic pluck", "lo-fi vinyl crackle",
+                       "lush string quartet", "punchy boom bap beat"]
     vocals: ["melodic rhythmic rap", "smooth emotional vocal", "nasal vocal timbre"]
     theory: ["pentatonic melody hook", "minor sixth chord movement", "syncopated phrasing"]
     recommended_tags: "mandopop, chinese traditional instruments, guzheng, emotional piano, syncopated boom-bap, pentatonic hook"
 
   "Billie Eilish":
+    aliases: ["billie eilish", "eilish"]
     genres: ["dark pop", "electropop", "alt-pop"]
-    production_sound: ["sub-bass rumble", "minimalist production", "intimate close-mic", "distorted vocal chops"]
+    production_sound: ["sub-bass rumble", "minimalist production",
+                       "intimate close-mic", "distorted vocal chops"]
     vocals: ["whispery vocals", "layered vocal harmonies", "breathy delivery"]
     theory: ["chromatic bassline", "slow tempo half-time", "downtempo minimal"]
     recommended_tags: "dark pop, minimalist, heavy sub-bass, whispery vocals, intimate close-mic, layered harmonies, downtempo"
 
   "Daft Punk":
+    aliases: ["daft punk", "daftpunk"]
     genres: ["french house", "disco funk", "synth-funk"]
-    production_sound: ["talkbox vocoder", "funky compressed slap bass", "sidechain compression", "vintage phaser guitar"]
+    production_sound: ["talkbox vocoder", "funky compressed slap bass",
+                       "sidechain compression", "vintage phaser guitar"]
     vocals: ["vocoder lead vocals", "robotic vocal chops"]
     theory: ["four-on-the-floor groove", "disco octave basslines", "Dorian mode funk hook"]
     recommended_tags: "french house, disco funk, talkbox vocoder, vintage phaser guitar, funky slap bass, four-on-the-floor, 120 BPM"
 
   # --- Cinematic & Epic ---
   "Hans Zimmer":
+    aliases: ["hans zimmer", "zimmer"]
     genres: ["cinematic orchestral", "film score", "epic orchestral"]
-    production_sound: ["colossal sub-bass thud", "hybrid analog synthesizer pads", "roaring brass stabs", "taiko drums pulse"]
+    production_sound: ["colossal sub-bass thud", "hybrid analog synthesizer pads",
+                       "roaring brass stabs", "taiko drums pulse"]
     vocals: ["wordless choral swell", "haunting solo vocal pad"]
-    theory: ["ostinato string rhythm", "gradual epic crescendo", "minimalist modal progression", "D minor tension"]
+    theory: ["ostinato string rhythm", "gradual epic crescendo",
+             "minimalist modal progression", "D minor tension"]
     recommended_tags: "cinematic orchestral, hybrid brass, ostinato strings, colossal sub-bass, epic crescendo, driving taiko pulse"
 
   "John Williams":
+    aliases: ["john williams"]
     genres: ["classical orchestral", "cinematic symphony"]
-    production_sound: ["warm brass fanfare", "sweeping violin section", "timpani roll", "concert hall acoustics"]
+    production_sound: ["warm brass fanfare", "sweeping violin section",
+                       "timpani roll", "concert hall acoustics"]
     vocals: ["operatic choir"]
-    theory: ["complex leitmotif", "triadic brass harmonies", "triumphant major scale", "expressive rubato tempo"]
+    theory: ["complex leitmotif", "triadic brass harmonies",
+             "triumphant major scale", "expressive rubato tempo"]
     recommended_tags: "cinematic symphony, triumphant brass fanfare, sweeping strings, concert hall acoustics, dynamic orchestration"
 
   # --- Rock & Metal ---
   "Linkin Park":
+    aliases: ["linkin park", "linkinpark"]
     genres: ["nu metal", "alternative rock", "electronic rock"]
-    production_sound: ["heavy distorted guitars", "hip-hop breakbeat", "DJ scratching", "punchy industrial snare"]
+    production_sound: ["heavy distorted guitars", "hip-hop breakbeat",
+                       "DJ scratching", "punchy industrial snare"]
     vocals: ["aggressive scream", "melodic clean vocal contrast", "rhythmic rap verse"]
-    theory: ["power chords", "drop D tuning feel", "quiet verse explosive chorus dynamic"]
+    theory: ["power chords", "drop D tuning feel",
+             "quiet verse explosive chorus dynamic"]
     recommended_tags: "alternative rock, nu metal, heavy distorted guitar riffs, industrial beats, explosive chorus dynamic"
 
   # --- Electronic & Dance ---
   "Avicii":
+    aliases: ["avicii"]
     genres: ["progressive house", "melodic EDM", "country house"]
-    production_sound: ["euphoric piano chords", "super-saw synth lead", "acoustic guitar intro", "huge festival drop"]
+    production_sound: ["euphoric piano chords", "super-saw synth lead",
+                       "acoustic guitar intro", "huge festival drop"]
     vocals: ["uplifting soulful vocal", "anthem-style vocal hook"]
-    theory: ["four-chord pop progression", "four-on-the-floor 128 BPM", "pentatonic uplifting melody"]
+    theory: ["four-chord pop progression", "four-on-the-floor 128 BPM",
+             "pentatonic uplifting melody"]
     recommended_tags: "progressive house, melodic EDM, euphoric piano chords, massive super-saw lead, uplifting festival drop, 128 BPM"
