@@ -1,8 +1,23 @@
-# Suno AI Style Tag Library v1.0
-# Generated for audio-analyzer skill v6
-# Last updated: 2026-03-31
-# Total tags: 200+
-# Purpose: Precise Suno AI prompt generation from audio analysis features
+# Suno AI Style Tag Library v2.0
+# Generated for audio-analyzer skill v7.3
+#
+# v7.3 NOTE — read this before adding tags
+# ----------------------------------------
+# `theory_tags` is now ACTUALLY EVALUATED. In v7.2 this block was documented but
+# no script ever read it; the compiler emitted theory tags from a guess chain,
+# which is how ordinary minor songs ended up tagged "phrygian tension".
+#
+# The contract in v7.3:
+#   * every tag fires only when a named evidence key is present AND satisfies
+#     its condition (see scripts/theory_triggers.py)
+#   * a missing measurement means "do not emit", never "emit the default"
+#   * "phrygian tension" additionally requires a measured flat 2nd that beats
+#     the natural 2nd; natural minor (b6 + b7) resolves to Aeolian
+#   * "syncopated bass" is measured on the BASS line only
+#
+# `genre_emission_contract` below lists the exact genre strings the compiler can
+# emit. auto_exclusion_map.yaml matches against those strings, so if you add a
+# genre here you must add it there too.
 
 # =============================================================================
 # GENRE TAGS (流派)
@@ -89,7 +104,7 @@ genre:
     - swing
 
   # --- Classical & Orchestral (Cinematic) ---
-  cinematic:  # ★ Hans Zimmer / John Williams 类型专区
+  cinematic:
     - orchestral
     - cinematic
     - epic orchestral
@@ -477,7 +492,6 @@ vocal:
 
 # =============================================================================
 # CINEMATIC / FILM SCORE SPECIAL ZONE
-# ★ Optimized for Hans Zimmer / John Williams style
 # =============================================================================
 cinematic_special:
   epic_orchestral:
@@ -506,8 +520,8 @@ cinematic_special:
     - rising strings
     - staccato brass
     - percussion crescendo
-    - hybrid orchestral  # ★ Hans Zimmer signature
-    - electronic orchestra  # ★ Hans Zimmer signature
+    - hybrid orchestral
+    - electronic orchestra
     - trailer music
     - epic trailer
     - dark orchestral
@@ -515,103 +529,63 @@ cinematic_special:
 
 # =============================================================================
 # FEATURE-TO-TAG MAPPING RULES
-# Used by audio-analyzer to convert analysis output → Suno style tags
+# NOTE: these are REFERENCE tables for a human, not a runtime code path.
+#       The runtime mapping lives in scripts/suno_contract.py so that there is
+#       exactly one place a Suno prompt can be assembled.
 # =============================================================================
 feature_mapping:
   bpm:
     "< 70":
-      tags: ["slow", "ballad", "dirge"]
-      note: "Very slow, ballad or dirge territory"
+      tags: ["very slow"]
+      note: "Ballad or dirge territory"
     "70-90":
-      tags: ["mid-tempo", "laid-back", "groove"]
+      tags: ["slow"]
       note: "Relaxed groove, hip-hop, chill"
     "90-110":
-      tags: ["moderate", "steady", "driving"]
+      tags: ["mid-tempo"]
       note: "Standard rock/pop feel"
     "110-130":
-      tags: ["upbeat", "energetic", "driving"]
+      tags: ["upbeat"]
       note: "Dance-ready energy"
     "130-150":
-      tags: ["fast", "pumping", "intense"]
-      note: "EDM, drum and bass, thrash territory"
+      tags: ["driving"]
+      note: "EDM, drum and bass territory"
     "> 150":
-      tags: ["frenetic", "breakneck", "high-octane"]
-      note: "Extreme tempo — metal, jungle, gabber"
+      tags: ["fast"]
+      note: "Extreme tempo"
 
   key_scale:
     major_keys:
-      tags: ["bright", "uplifting", "happy", "triumphant"]
-      note: "Major = generally positive valence"
+      tags: ["bright", "uplifting"]
     minor_keys:
-      tags: ["dark", "melancholic", "tense", "brooding"]
-      note: "Minor = generally negative valence"
+      tags: ["dark", "melancholic"]
     dorian:
-      tags: ["soulful", "bluesy", "warm minor"]
-      note: "Dorian mode — jazz, soul, funk"
+      tags: ["soulful", "warm minor"]
     phrygian:
-      tags: ["exotic", "dark", "flamenco-esque"]
-      note: "Phrygian — flamenco, metal, middle-eastern"
-    lydian:
-      tags: ["dreamy", "magical", "floating"]
-      note: "Lydian — film scores, fantasy"
+      tags: ["exotic", "dark"]
+      note: "Only with a measured flat 2nd"
     mixolydian:
-      tags: ["bluesy", "rock", "earthy"]
-      note: "Mixolydian — rock, folk, funk"
-
-  danceability:
-    # Essentia danceability scale (higher = more danceable)
-    "> 1.5":
-      tags: ["groove", "rhythmic", "danceable", "infectious beat"]
-      note: "Highly danceable"
-    "1.0-1.5":
-      tags: ["driving", "steady pulse", "head-nodding"]
-      note: "Moderately rhythmic"
-    "< 1.0":
-      tags: ["atmospheric", "flowing", "free-form"]
-      note: "Non-danceable, ambient or complex rhythm"
+      tags: ["bluesy", "earthy"]
 
   lufs:
-    # Integrated loudness (LUFS)
+    # REPORT ONLY. Loudness must never be pasted into a Suno prompt field.
     "> -9":
-      tags: ["heavily compressed", "loud", "wall of sound", "radio-ready"]
-      note: "Over-compressed, modern pop/EDM mastering"
+      tags: ["heavily compressed"]
     "-9 to -14":
-      tags: ["punchy", "dynamic", "well-produced"]
-      note: "Typical commercial mastering"
+      tags: ["punchy"]
     "-14 to -18":
-      tags: ["dynamic", "spacious", "audiophile"]
-      note: "Wider dynamic range"
+      tags: ["dynamic"]
     "< -18":
-      tags: ["quiet", "intimate", "acoustic", "sparse"]
-      note: "Very dynamic — classical, acoustic, ambient"
-
-  spectral_centroid:
-    # Brightness proxy
-    "high (> 3000 Hz avg)":
-      tags: ["bright", "crisp", "airy", "treble-heavy"]
-    "mid (1500-3000 Hz)":
-      tags: ["balanced", "natural", "full-range"]
-    "low (< 1500 Hz)":
-      tags: ["warm", "dark", "bass-heavy", "lo-fi"]
-
-  energy:
-    # RMS / perceived energy
-    "high (> 0.3 RMS)":
-      tags: ["intense", "powerful", "loud", "aggressive"]
-    "mid (0.1-0.3 RMS)":
-      tags: ["driving", "energetic", "dynamic"]
-    "low (< 0.1 RMS)":
-      tags: ["soft", "delicate", "quiet", "intimate"]
+      tags: ["spacious"]
 
 # =============================================================================
 # FORBIDDEN COMBINATIONS
-# Tags that produce contradictory/incoherent Suno results — never use together
 # =============================================================================
 forbidden_combos:
   - tags: ["808 bass", "acoustic guitar"]
     reason: "Electronic trap element conflicts with organic acoustic texture"
   - tags: ["orchestral", "trap beat"]
-    reason: "Contradictory production styles — use 'hybrid orchestral' instead if needed"
+    reason: "Contradictory production styles — use 'hybrid orchestral' instead"
   - tags: ["lo-fi", "pristine production"]
     reason: "Directly contradictory fidelity descriptors"
   - tags: ["lo-fi", "radio-ready"]
@@ -635,72 +609,56 @@ forbidden_combos:
 
 # =============================================================================
 # HIGH-IMPACT POWER COMBOS (Community Verified)
-# Tag combinations with exceptional Suno output quality
 # =============================================================================
 power_combos:
   - tags: ["slap bass", "funky", "70s soul"]
     description: "Classic 70s funk — Earth Wind & Fire territory"
     recommended_bpm: "100-120"
-
   - tags: ["synthpop", "analog synth", "driving", "Juno-106 pad"]
     description: "80s synth wave — Depeche Mode / New Order energy"
     recommended_bpm: "115-130"
-
   - tags: ["lo-fi hip-hop", "boom bap", "tape saturation", "jazz sample"]
     description: "Chill lo-fi study beats — nostalgic and relaxed"
     recommended_bpm: "70-90"
-
   - tags: ["epic orchestral", "hybrid orchestral", "tension building", "ostinato strings"]
     description: "Hans Zimmer signature — Inception / Interstellar style"
     recommended_bpm: "60-100"
-
   - tags: ["dark ambient", "eerie", "granular synth", "heavy reverb"]
     description: "Atmospheric horror/thriller score — unsettling texture"
     recommended_bpm: "40-70"
-
   - tags: ["dream pop", "shoegaze", "wall of sound", "breathy"]
     description: "My Bloody Valentine / Cocteau Twins texture"
     recommended_bpm: "80-110"
-
   - tags: ["trap", "808 bass", "hi-hat rolls", "dark", "melodic rap"]
     description: "Modern trap banger — Atlanta sound"
     recommended_bpm: "130-145"
-
   - tags: ["neo-soul", "rhodes", "soulful", "harmonies", "laid-back groove"]
     description: "D'Angelo / Erykah Badu vibes — warm and organic"
     recommended_bpm: "75-95"
-
   - tags: ["post-rock", "crescendo", "emotional", "reverb", "instrumental"]
     description: "Explosions in the Sky climax build — cinematic instrumental"
     recommended_bpm: "90-130"
-
   - tags: ["future bass", "euphoric", "synth lead", "chopped vocals", "uplifting"]
     description: "Flume / ODESZA festival energy"
     recommended_bpm: "135-155"
-
   - tags: ["jazz noir", "noir", "muted trumpet", "sparse", "mysterious"]
     description: "Film noir jazz — smoky bar at midnight"
     recommended_bpm: "60-85"
-
   - tags: ["acoustic folk", "fingerpicked guitar", "intimate", "warm", "storytelling"]
     description: "Iron & Wine / Bon Iver acoustic intimacy"
     recommended_bpm: "65-100"
-
   - tags: ["house", "four-on-the-floor", "deep", "punchy", "danceable"]
     description: "Chicago house stomp — pure dancefloor"
     recommended_bpm: "120-128"
-
   - tags: ["heavy metal", "distorted guitar", "aggressive", "double kick", "raw"]
     description: "Classic metal aggression — Metallica / Pantera"
     recommended_bpm: "140-200"
-
   - tags: ["bossa nova", "nylon guitar", "warm", "laid-back", "jazzy"]
     description: "Brazilian bossa nova — Jobim territory"
     recommended_bpm: "100-120"
 
 # =============================================================================
 # GENRE → DEFAULT INSTRUMENT HINTS
-# Quick-lookup to avoid instrument-genre mismatches
 # =============================================================================
 genre_instrument_hints:
   trap: ["808 bass", "TR-808 drums", "hi-hat rolls", "synth pad"]
@@ -715,50 +673,90 @@ genre_instrument_hints:
   cinematic: ["orchestral strings", "brass", "choir", "percussion", "synth pads"]
 
 # =============================================================================
-# SUNO-PERCEPTIBLE MUSIC THEORY TAGS (v7.2 乐理可感知白名单)
-# Academic analysis tags mapped to internet-high-frequency Suno tokens
+# SUNO-PERCEPTIBLE MUSIC THEORY TAGS
+#
+# These ARE evaluated at runtime by scripts/theory_triggers.py. Each entry fires
+# only when its evidence exists. `trigger` strings are matched against the real
+# measured evidence, never used as a substring guess.
 # =============================================================================
 theory_tags:
   progressions:
     - tag: "2-5-1 jazz progression"
       trigger: ["ii-V-I", "ii7-V7-Imaj7"]
+      evidence: "roman_loop"
       note: "Standard jazz and neo-soul cadence"
     - tag: "four-chord pop loop"
       trigger: ["i-VI-III-VII", "I-V-vi-IV", "vi-IV-I-V"]
+      evidence: "roman_loop"
       note: "Most common radio pop / ballad loop"
     - tag: "andalusian cadence"
       trigger: ["i-VII-VI-V", "iv6-V7"]
+      evidence: "roman_loop"
       note: "Flamenco, acoustic rock, emotional tension"
     - tag: "blues progression"
       trigger: ["I-IV-V blues", "12-bar blues"]
+      evidence: "roman_loop"
       note: "Classic blues, funk, rock"
 
   modes_and_scales:
     - tag: "dorian mode"
       trigger: ["Dorian", "minor with natural 6th"]
+      evidence: "modal_flavor"
       note: "Warm minor, funk, jazz fusion"
     - tag: "mixolydian groove"
       trigger: ["Mixolydian", "major with flat 7th"]
+      evidence: "modal_flavor"
       note: "Blues rock, southern rock, jam band"
     - tag: "minor pentatonic"
       trigger: ["pentatonic minor", "blues scale"]
+      evidence: "pentatonic == 'minor'"
       note: "Rock, trap melodies, soul hooks"
     - tag: "major pentatonic"
       trigger: ["pentatonic major"]
+      evidence: "pentatonic == 'major'"
       note: "Mandopop, country, folk"
     - tag: "phrygian tension"
       trigger: ["Phrygian", "minor with flat 2nd"]
-      note: "Dark electronic, trap, metal"
+      evidence: "modal_evidence.b2 >= 0.35 AND b2 > natural_2 * 1.10"
+      note: "Dark electronic, trap, metal. Requires a MEASURED flat 2nd; natural minor is Aeolian."
 
   rhythm_and_groove:
     - tag: "syncopated bass"
       trigger: ["syncopation > 0.4"]
+      evidence: "bass_syncopation_ratio > 0.4 (bass line only)"
     - tag: "half-time drum beat"
       trigger: ["half-time", "downtempo trap"]
+      evidence: "half_time is True"
     - tag: "straight 16ths"
       trigger: ["16th notes", "motorik beat"]
+      evidence: "swing_ratio in [0.9, 1.1] AND sixteenth_hats is True"
     - tag: "swung 8ths"
       trigger: ["swing ratio > 1.2"]
+      evidence: "swing_ratio >= 1.2"
     - tag: "polyrhythm 3:4"
       trigger: ["metric modulation", "polyrhythm"]
+      evidence: "polyrhythm is True"
 
+# =============================================================================
+# GENRE EMISSION CONTRACT
+#
+# The exact genre strings scripts/compile_prompt.py can emit. Every key here
+# must have a matching canonical entry in auto_exclusion_map.yaml.
+# =============================================================================
+genre_emission_contract:
+  "House / Deep House": ["deep house", "house"]
+  "Tech House": ["tech house"]
+  "Trance / Progressive": ["progressive trance", "trance"]
+  "Drum & Bass / Breakbeat": ["drum and bass", "breakbeat"]
+  "Techno / Hard Dance": ["techno", "hard techno"]
+  "EDM / Big Room": ["EDM", "big room"]
+  "Trap / Hip-hop": ["trap", "hip-hop"]
+  "Lo-fi / Boom-bap": ["lo-fi hip-hop", "boom bap"]
+  "R&B / Neo-soul": ["R&B", "neo-soul"]
+  "Ambient / Cinematic": ["ambient", "cinematic"]
+  "Cinematic / Orchestral": ["cinematic orchestral", "epic orchestral"]
+  "Pop / Indie Pop": ["indie pop", "pop"]
+  "Rock / Alternative": ["alternative rock", "indie rock"]
+  "Folk / Acoustic": ["indie folk", "acoustic"]
+  "Jazz / Soul": ["jazz", "neo-soul"]
+  "Electronic / Instrumental (mixed)": ["electronic"]
